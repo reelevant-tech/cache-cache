@@ -6,10 +6,13 @@
   "license": "Apache-2.0",
   "private": false,
   "engines": {
-    "node": "12.0"
+    "node": "^12.0"
   },
   "scripts": {
-    "build": "tsc --project ."
+    "build": "tsc --project .",
+    "test": "cov8 ava",
+    "posttest": "cov8 report text",
+    "coverage": "cov8 report json && codecov -f coverage/*.json"
   },
   "files": [
     "build"
@@ -18,7 +21,28 @@
     "access": true
   },
   "devDependencies": {
+    "@types/ioredis": "^4.0.19",
+    "@types/lru-cache": "^5.1.0",
     "@types/node": "12",
+    "ava": "^2.4.0",
+    "ts-node": "^8.5.2",
     "typescript": "^3.7.2"
+  },
+  "dependencies": {
+    "ioredis": "^4.14.1",
+    "lru-cache": "^5.1.1",
+    "v8-coverage": "^1.0.9"
+  },
+  "ava": {
+    "files": [
+      "src/**/**/*.test.ts"
+    ],
+    "compileEnhancements": false,
+    "extensions": [
+      "ts"
+    ],
+    "require": [
+      "ts-node/register/transpile-only"
+    ]
   }
 }
