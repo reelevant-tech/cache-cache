@@ -24,6 +24,6 @@ export interface CacheLayer {
 }
 
 export enum AvailableCacheLayer {
-  MEMORY,
-  REDIS
+  MEMORY = 'MEMORY',
+  REDIS = 'REDIS'
 }
