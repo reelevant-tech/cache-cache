@@ -25,7 +25,7 @@ export class RedisCacheLayer implements CacheLayer {
     this.options = options
     this.client = this.options.redisClient
     const randomPrefix = Math.random().toString(36).substring(2, 15)
-    this.prefix = `${this.options.prefix}:` ?? `${randomPrefix}:`
+    this.prefix = `${this.options.prefix ?? randomPrefix}:`
   }
 
   private getCacheKey (key: string) {
