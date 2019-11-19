@@ -35,12 +35,12 @@ export class MemoryCacheLayer implements CacheLayer {
     return this.lru.get(key) as T | undefined
   }
 
-  set<T extends object | string>(key: string, object: T, ttl?: number): void {
+  async set<T extends object | string>(key: string, object: T, ttl?: number): Promise<void> {
     const customTTL = ttl !== undefined ? ttl * (this.options.ttlMultiplier ?? 1) : undefined
     this.lru.set(key, object, customTTL ?? this.options.ttl)
   }
 
-  clear (key: string): void {
+  async clear (key: string): Promise<void> {
     this.lru.del(key)
   }
 }

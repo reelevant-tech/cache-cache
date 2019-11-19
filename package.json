@@ -25,13 +25,13 @@
     "@types/lru-cache": "^5.1.0",
     "@types/node": "12",
     "ava": "^2.4.0",
+    "ioredis": "^4.14.1",
     "ts-node": "^8.5.2",
-    "typescript": "^3.7.2"
+    "typescript": "^3.7.2",
+    "v8-coverage": "^1.0.9"
   },
   "dependencies": {
-    "ioredis": "^4.14.1",
-    "lru-cache": "^5.1.1",
-    "v8-coverage": "^1.0.9"
+    "lru-cache": "^5.1.1"
   },
   "ava": {
     "files": [

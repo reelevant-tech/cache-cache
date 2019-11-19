@@ -32,10 +32,13 @@ export class RedisCacheLayer implements CacheLayer {
   }
 
   async get<T extends string | object>(key: string): Promise<T | undefined> {
-    const result = await Promise.race<string | undefined | null>([
-      this.options.timeout ? this.sleep(this.options.timeout) : undefined,
+    const promises: Array<Promise<string | undefined | null>> = [
       this.client.get(this.getCacheKey(key))
-    ])
+    ]
+    if (this.options.timeout !== undefined) {
+      promises.push(this.sleep(this.options.timeout))
+    }
+    const result = await Promise.race(promises)
     if (result === null || result === undefined) return undefined
     // check if it's not a json object, we can return as a string
     if (result[0] !== '{' && result[0] !== '[') {
@@ -51,14 +54,14 @@ export class RedisCacheLayer implements CacheLayer {
     }
   }
 
-  set<T extends object | string> (key: string, object: T, ttl?: number): void {
+  async set<T extends object | string> (key: string, object: T, ttl?: number): Promise<void> {
     const customTTL = ttl !== undefined ? ttl * (this.options.ttlMultiplier ?? 1) : undefined
-    const value = typeof object === 'object' ? JSON.stringify(object) : (object as string)
-    this.client.set(this.getCacheKey(key), value, 'PX', customTTL ?? this.options.ttl)
+    const value = typeof object !== 'string' ? JSON.stringify(object) : (object as string)
+    await this.client.set(this.getCacheKey(key), value, 'PX', customTTL ?? this.options.ttl)
   }
 
-  clear (key: string): void {
-    this.client.del(this.getCacheKey(key))
+  async clear (key: string): Promise<void> {
+    await this.client.del(this.getCacheKey(key))
   }
 
   private sleep (timeout: number): Promise<undefined> {

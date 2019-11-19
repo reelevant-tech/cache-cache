@@ -33,6 +33,22 @@ test('should works with default config', async t => {
   t.deepEqual(store.lru.values()[0], {})
 })
 
+test('should throw if decorated fonction is a getter', async t => {
+  try {
+    class Test {
+      // @ts-ignore
+      @Memoize<Object>()
+      static get toto () {
+        return {}
+      }
+    }
+    new Test()
+  }
+  catch (error) {
+    t.assert(error.includes('decorator only available for'))
+  }
+})
+
 test('should be able to override default config', async t => {
   class Test {
     @Memoize<Object>({

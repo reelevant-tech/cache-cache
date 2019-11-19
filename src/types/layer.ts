@@ -13,13 +13,13 @@ export interface CacheLayer {
    * @param object arbitrary object to store
    * @param [ttl] override default ttl of the layer
    */
-  set<T extends object | string>(key: string, object: T, ttl?: number): void
+  set<T extends object | string>(key: string, object: T, ttl?: number): Promise<void>
 
   /**
    * Clear the specific cache layer for a given key
    * @param key the key at which the object will be stored, used to fetch it back
    */
-  clear (key: string): void
+  clear (key: string): Promise<void>
 }
 
 export interface CacheLayerOptions {

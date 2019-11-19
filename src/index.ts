@@ -53,7 +53,7 @@ export const Memoize = <T extends object | string>(options?: CacheLayerManagerOp
 		if (descriptor.value !== undefined) {
 			descriptor.value = memoizeFunction<T>(descriptor.value, options ?? currentConfig)
     } else {
-			throw 'Only put a Memoize() decorator on a async function.';
+			throw 'Memoize decorator only available for async function.';
 		}
 	}
 }
