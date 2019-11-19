@@ -22,6 +22,25 @@ export interface CacheLayer {
   clear (key: string): void
 }
 
+export interface CacheLayerOptions {
+  /**
+   * Default Time-To-Live for all keys on this layer
+   */
+  ttl: number,
+  /**
+   * When applying a custom ttl to a specific key you may want to increase the TTL
+   * for a given layer, you can use this multiplier that will be applied to compute the
+   * final TTL for the layer.
+   */
+  ttlMultiplier?: number
+  /**
+   * How much time to wait for the cache to respond when fetching a key
+   * if it reach the timeout, the next layer will be called (or if no layer is left)
+   * it will call the original function.
+   */
+  timeout?: number
+}
+
 export enum AvailableCacheLayer {
   MEMORY = 'MEMORY',
   REDIS = 'REDIS'

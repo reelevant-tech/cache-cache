@@ -7,8 +7,7 @@ import { Cache } from './strategies/store'
 const defaultConfig: CacheLayerManagerOptions = {
   layerConfigs: {
     [AvailableCacheLayer.MEMORY]: {
-      ttl: 15 * 1000,
-      maxEntries: 100000
+      ttl: 15 * 1000
     }
   },
   layerOrder: [

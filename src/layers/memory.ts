@@ -1,10 +1,16 @@
 
-import { CacheLayer, AvailableCacheLayer } from '../types/layer'
+import { CacheLayer, AvailableCacheLayer, CacheLayerOptions } from '../types/layer'
 import LRU from 'lru-cache'
 
-export type MemoryCacheLayerOptions = {
-  ttl: number,
-  maxEntries: number
+export interface MemoryCacheLayerOptions extends CacheLayerOptions {
+  /**
+   * Maximum number of keys to store inside the in-memory cache, if it's reached
+   * the cache implement the `least-recently-used` algorithm, see
+   * https://github.com/isaacs/node-lru-cache
+   * 
+   * default to 100000 keys
+   */
+  maxEntries?: number
 }
 
 /**
@@ -19,17 +25,19 @@ export class MemoryCacheLayer implements CacheLayer {
   constructor (options: MemoryCacheLayerOptions) {
     this.options = options
     this.lru = new LRU<string, object | string>({
-      max: this.options.maxEntries,
+      max: this.options.maxEntries ?? 100000,
       maxAge: this.options.ttl
     })
   }
 
   async get<T extends object | string>(key: string): Promise<T | undefined> {
+    // no race is implemented since fetching in memory is sync
     return this.lru.get(key) as T | undefined
   }
 
   set<T extends object | string>(key: string, object: T, ttl?: number): void {
-    this.lru.set(key, object, ttl)
+    const customTTL = ttl !== undefined ? ttl * (this.options.ttlMultiplier ?? 1) : undefined
+    this.lru.set(key, object, customTTL ?? this.options.ttl)
   }
 
   clear (key: string): void {

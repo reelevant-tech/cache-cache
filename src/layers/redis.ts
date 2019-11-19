@@ -1,10 +1,16 @@
 
-import { CacheLayer, AvailableCacheLayer } from '../types/layer'
+import { CacheLayer, AvailableCacheLayer, CacheLayerOptions } from '../types/layer'
 import IORedis from 'ioredis'
 
-export type RedisCacheLayerOptions = {
-  ttl: number,
+export interface RedisCacheLayerOptions extends CacheLayerOptions {
+  /**
+   * Provide your own ioredis client
+   */
   redisClient: IORedis.Redis,
+  /**
+   * A custom prefix used to differenciate keys
+   * By default memoized function use their name as prefix
+   */
   prefix?: string
 }
 
@@ -26,7 +32,10 @@ export class RedisCacheLayer implements CacheLayer {
   }
 
   async get<T extends string | object>(key: string): Promise<T | undefined> {
-    const result = await this.client.get(this.getCacheKey(key))
+    const result = await Promise.race<string | undefined | null>([
+      this.options.timeout ? this.sleep(this.options.timeout) : undefined,
+      this.client.get(this.getCacheKey(key))
+    ])
     if (result === null || result === undefined) return undefined
     // check if it's not a json object, we can return as a string
     if (result[0] !== '{' && result[0] !== '[') {
@@ -43,11 +52,18 @@ export class RedisCacheLayer implements CacheLayer {
   }
 
   set<T extends object | string> (key: string, object: T, ttl?: number): void {
+    const customTTL = ttl !== undefined ? ttl * (this.options.ttlMultiplier ?? 1) : undefined
     const value = typeof object === 'object' ? JSON.stringify(object) : (object as string)
-    this.client.set(this.getCacheKey(key), value, 'PX', ttl ?? this.options.ttl)
+    this.client.set(this.getCacheKey(key), value, 'PX', customTTL ?? this.options.ttl)
   }
 
   clear (key: string): void {
     this.client.del(this.getCacheKey(key))
+  }
+
+  private sleep (timeout: number): Promise<undefined> {
+    return new Promise((resolve) => {
+      return setTimeout(resolve, timeout)
+    })
   }
 }
