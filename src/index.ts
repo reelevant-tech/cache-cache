@@ -1,4 +1,3 @@
-
 import { CacheLayerManagerOptions } from './layers/manager'
 import { AvailableCacheLayer } from './types/layer'
 import { memoizeFunction, AsyncFunc } from './strategies/memoize'
@@ -49,13 +48,13 @@ export const getMemoize = <T extends object | string>(fn: AsyncFunc<T>, options?
  *  config given to `useAsDefault`
  */
 export const Memoize = <T extends object | string>(options?: CacheLayerManagerOptions) => {
-	return (target: Object, propertyKey: string, descriptor: TypedPropertyDescriptor<AsyncFunc<T>>) => {
-		if (descriptor.value !== undefined) {
-			descriptor.value = memoizeFunction<T>(descriptor.value, options ?? currentConfig)
+  return (target: Object, propertyKey: string, descriptor: TypedPropertyDescriptor<AsyncFunc<T>>) => {
+    if (descriptor.value !== undefined) {
+      descriptor.value = memoizeFunction<T>(descriptor.value, options ?? currentConfig)
     } else {
-			throw 'Memoize decorator only available for async function.';
-		}
-	}
+      throw new Error('Memoize decorator only available for async function.')
+    }
+  }
 }
 
 export { AvailableCacheLayer } from './types/layer'

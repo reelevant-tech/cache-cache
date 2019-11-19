@@ -28,6 +28,7 @@ test('should works with default config', async t => {
   })
   class Test {
     @Memoize<Object>()
+    // @ts-ignore
     static async toto () {
       return {}
     }

@@ -1,2 +1,6 @@
 src
 node_modules
+coverage
+.vscode
+tsconfig.json
+tslint.json

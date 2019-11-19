@@ -39,23 +39,23 @@ export class CacheLayerManager {
     }
   }
 
-  async get<T extends object | string>(key: string): Promise<T | undefined> {
+  async get<T extends object | string> (key: string): Promise<T | undefined> {
     for (let layer of this.layers) {
       const result = await layer.get<T>(key)
       if (result !== undefined) return result
-    } 
+    }
     return undefined
   }
 
-  set<T extends object | string>(key: string, object: T, ttl?: number): void {
+  async set<T extends object | string> (key: string, object: T, ttl?: number): Promise<void> {
     for (let layer of this.layers) {
-      layer.set<T>(key, object, ttl)
-    } 
+      await layer.set<T>(key, object, ttl)
+    }
   }
 
-  clear (key: string) {
+  async clear (key: string) {
     for (let layer of this.layers) {
-      layer.clear(key)
+      await layer.clear(key)
     }
   }
 }

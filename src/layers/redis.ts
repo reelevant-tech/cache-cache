@@ -31,7 +31,7 @@ export class RedisCacheLayer implements CacheLayer {
     return `${this.prefix}${key}`
   }
 
-  async get<T extends string | object>(key: string): Promise<T | undefined> {
+  async get<T extends string | object> (key: string): Promise<T | undefined> {
     const promises: Array<Promise<string | undefined | null>> = [
       this.client.get(this.getCacheKey(key))
     ]

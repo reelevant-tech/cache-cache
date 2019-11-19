@@ -7,7 +7,7 @@ export interface MemoryCacheLayerOptions extends CacheLayerOptions {
    * Maximum number of keys to store inside the in-memory cache, if it's reached
    * the cache implement the `least-recently-used` algorithm, see
    * https://github.com/isaacs/node-lru-cache
-   * 
+   *
    * default to 100000 keys
    */
   maxEntries?: number
@@ -30,12 +30,12 @@ export class MemoryCacheLayer implements CacheLayer {
     })
   }
 
-  async get<T extends object | string>(key: string): Promise<T | undefined> {
+  async get<T extends object | string> (key: string): Promise<T | undefined> {
     // no race is implemented since fetching in memory is sync
     return this.lru.get(key) as T | undefined
   }
 
-  async set<T extends object | string>(key: string, object: T, ttl?: number): Promise<void> {
+  async set<T extends object | string> (key: string, object: T, ttl?: number): Promise<void> {
     const customTTL = ttl !== undefined ? ttl * (this.options.ttlMultiplier ?? 1) : undefined
     this.lru.set(key, object, customTTL ?? this.options.ttl)
   }

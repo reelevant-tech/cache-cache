@@ -10,4 +10,4 @@ export class Cache extends CacheLayerManager {
   constructor (options: CacheOptions) {
     super(options)
   }
-} 
+}

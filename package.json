@@ -2,7 +2,7 @@
   "name": "@rlvt/cache-cache",
   "version": "0.1.0",
   "description": "cache all the things",
-  "main": "index.js",
+  "main": "build/index.js",
   "license": "Apache-2.0",
   "private": false,
   "engines": {
@@ -10,6 +10,8 @@
   },
   "scripts": {
     "build": "tsc --project .",
+    "lint": "tslint --project .",
+    "lint:fix": "tslint --project . --fix",
     "test": "cov8 ava",
     "posttest": "cov8 report text",
     "coverage": "cov8 report json && codecov -f coverage/*.json"
@@ -27,6 +29,8 @@
     "ava": "^2.4.0",
     "ioredis": "^4.14.1",
     "ts-node": "^8.5.2",
+    "tslint": "^5.20.1",
+    "tslint-config-standard": "^9.0.0",
     "typescript": "^3.7.2",
     "v8-coverage": "^1.0.9"
   },
