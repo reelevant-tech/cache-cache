@@ -1,8 +1,9 @@
 import test from 'ava'
-import { memoizeFunction, AsyncFunc } from '../memoize'
-import { AvailableCacheLayer } from '../../types/layer'
-import { CacheLayerManager } from '../../layers/manager'
-import { MemoryCacheLayer } from '../../layers/memory'
+import { AsyncFunc } from '../strategies/memoize'
+import { getMemoize } from '../index'
+import { AvailableCacheLayer } from '../types/layer'
+import { CacheLayerManager } from '../layers/manager'
+import { MemoryCacheLayer } from '../layers/memory'
 
 /**
  * Get the cache layer manager for a given memoized function
@@ -19,7 +20,7 @@ test('should correctly store fn result inside the cache', async t => {
     return {}
   }
 
-  const patched = memoizeFunction<Object>(asyncTest, {
+  const patched = getMemoize<Object>(asyncTest, {
     layerConfigs: {
       [AvailableCacheLayer.MEMORY]: {
         ttl: 5000,
@@ -45,7 +46,7 @@ test('should correctly fetch from cache if the result is already there', async t
     return {}
   }
 
-  const patched = memoizeFunction<Object>(asyncTest, {
+  const patched = getMemoize<Object>(asyncTest, {
     layerConfigs: {
       [AvailableCacheLayer.MEMORY]: {
         ttl: 5000,
@@ -73,7 +74,7 @@ test('should compute have two different key for different invokation', async t =
     return {}
   }
 
-  const patched = memoizeFunction<Object>(asyncTest, {
+  const patched = getMemoize<Object>(asyncTest, {
     layerConfigs: {
       [AvailableCacheLayer.MEMORY]: {
         ttl: 5000,
