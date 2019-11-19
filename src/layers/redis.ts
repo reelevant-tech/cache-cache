@@ -1,6 +1,7 @@
 
 import { CacheLayer, AvailableCacheLayer, CacheLayerOptions } from '../types/layer'
 import IORedis from 'ioredis'
+import of from '../utils/of'
 
 export interface RedisCacheLayerOptions extends CacheLayerOptions {
   /**
@@ -38,7 +39,11 @@ export class RedisCacheLayer implements CacheLayer {
     if (this.options.timeout !== undefined) {
       promises.push(this.sleep(this.options.timeout))
     }
-    const result = await Promise.race(promises)
+    const [ result, err ] = await of(Promise.race(promises))
+    if (err !== undefined && this.options.shallowErrors !== true) {
+      throw err
+    }
+
     if (result === null || result === undefined) return undefined
     // check if it's not a json object, we can return as a string
     if (result[0] !== '{' && result[0] !== '[') {
@@ -57,11 +62,17 @@ export class RedisCacheLayer implements CacheLayer {
   async set<T extends object | string> (key: string, object: T, ttl?: number): Promise<void> {
     const customTTL = ttl !== undefined ? ttl * (this.options.ttlMultiplier ?? 1) : undefined
     const value = typeof object !== 'string' ? JSON.stringify(object) : (object as string)
-    await this.client.set(this.getCacheKey(key), value, 'PX', customTTL ?? this.options.ttl)
+    const res = await of(this.client.set(this.getCacheKey(key), value, 'PX', customTTL ?? this.options.ttl))
+    if (res[1] !== undefined && this.options.shallowErrors !== true) {
+      throw res[1]
+    }
   }
 
   async clear (key: string): Promise<void> {
-    await this.client.del(this.getCacheKey(key))
+    let res = await of(this.client.del(this.getCacheKey(key)))
+    if (res[1] !== undefined && this.options.shallowErrors !== true) {
+      throw res[1]
+    }
   }
 
   private sleep (timeout: number): Promise<undefined> {

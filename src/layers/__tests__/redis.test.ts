@@ -122,3 +122,103 @@ test.serial('layer should have the correct prefix', async t => {
   const value = await redisClient.get('myprefix:test')
   t.assert(value === 'toto')
 })
+
+test.serial('should not throw if shallowErrors is set to true on get', async t => {
+  const layer = new RedisCacheLayer({
+    redisClient,
+    ttl: 5000,
+    prefix: 'myprefix',
+    shallowErrors: true
+  })
+  await layer.set('test', 'toto')
+  const value = await layer.get('test')
+  t.assert(value === 'toto')
+  const originalGet = redisClient.get
+  redisClient.get = async () => {
+    throw Error('randomError')
+  }
+  const noValue = await layer.get('test')
+  t.log(noValue)
+  t.assert(noValue === undefined)
+  redisClient.get = originalGet
+})
+
+test.serial('should throw if shallowErrors is set to false on get', async t => {
+  const layer = new RedisCacheLayer({
+    redisClient,
+    ttl: 5000,
+    prefix: 'myprefix',
+    shallowErrors: false
+  })
+  const originalGet = redisClient.get
+  redisClient.get = async () => {
+    throw Error('randomError')
+  }
+  await t.throwsAsync(() => layer.get('test'))
+  redisClient.get = originalGet
+})
+
+test.serial('should not throw if shallowErrors is set to true on set', async t => {
+  const layer = new RedisCacheLayer({
+    redisClient,
+    ttl: 5000,
+    prefix: 'myprefix',
+    shallowErrors: true
+  })
+  const originalSet = redisClient.set
+  redisClient.set = async () => {
+    throw Error('randomError')
+  }
+  await layer.set('test', 'toto')
+  redisClient.set = originalSet
+  const value = await layer.get('test')
+  t.assert(value === undefined)
+})
+
+test.serial('should throw if shallowErrors is set to false on set', async t => {
+  const layer = new RedisCacheLayer({
+    redisClient,
+    ttl: 5000,
+    prefix: 'myprefix',
+    shallowErrors: false
+  })
+  const originalSet = redisClient.set
+  redisClient.set = async () => {
+    throw Error('randomError')
+  }
+  await t.throwsAsync(() => layer.set('test', 'toto'))
+  redisClient.set = originalSet
+})
+
+test.serial('should not throw if shallowErrors is set to true on clear', async t => {
+  const layer = new RedisCacheLayer({
+    redisClient,
+    ttl: 5000,
+    prefix: 'myprefix',
+    shallowErrors: true
+  })
+  await layer.set('test', 'toto')
+  const originalDel = redisClient.del
+  redisClient.del = async () => {
+    throw Error('randomError')
+  }
+  await layer.clear('test')
+  redisClient.del = originalDel
+  const value = await layer.get('test')
+  t.assert(value === 'toto')
+})
+
+test.serial('should throw if shallowErrors is set to false on clear', async t => {
+  const layer = new RedisCacheLayer({
+    redisClient,
+    ttl: 5000,
+    prefix: 'myprefix',
+    shallowErrors: false
+  })
+  const originalDel = redisClient.del
+  redisClient.del = async () => {
+    throw Error('randomError')
+  }
+  await t.throwsAsync(() => layer.clear('test'))
+  redisClient.del = originalDel
+})

@@ -39,6 +39,11 @@ export interface CacheLayerOptions {
    * it will call the original function.
    */
   timeout?: number
+  /**
+   * Shallow errors should be set as true if you want to ignore all caches issues
+   * (like failing to connect to a redis server) and fallback to undefined
+   */
+  shallowErrors?: boolean
 }
 
 export enum AvailableCacheLayer {
