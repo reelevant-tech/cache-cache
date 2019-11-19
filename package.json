@@ -1,6 +1,6 @@
 {
   "name": "@rlvt/cache-cache",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "description": "cache all the things",
   "main": "build/index.js",
   "license": "Apache-2.0",
@@ -14,7 +14,9 @@
     "lint:fix": "tslint --project . --fix",
     "test": "cov8 ava",
     "posttest": "cov8 report text",
-    "coverage": "cov8 report json && codecov -f coverage/*.json"
+    "coverage": "cov8 report json && codecov -f coverage/*.json",
+    "release": "release-it",
+    "gh-release": "gren release -D commits"
   },
   "files": [
     "build"
@@ -25,9 +27,12 @@
   "devDependencies": {
     "@types/ioredis": "^4.0.19",
     "@types/lru-cache": "^5.1.0",
-    "@types/node": "12",
+    "@types/node": "^12",
     "ava": "^2.4.0",
+    "codecov": "^3.6.1",
+    "github-release-notes": "^0.17.0",
     "ioredis": "^4.14.1",
+    "release-it": "^12.4.3",
     "ts-node": "^8.5.2",
     "tslint": "^5.20.1",
     "tslint-config-standard": "^9.0.0",
@@ -48,5 +53,21 @@
     "require": [
       "ts-node/register/transpile-only"
     ]
+  },
+  "release-it": {
+    "git": {
+      "tagName": "v${version}",
+      "commit": true,
+      "tag": true,
+      "push": true,
+      "commitMessage": "chore(release): prepare ${version}",
+      "requireUpstream": false
+    },
+    "github": {
+      "release": false
+    },
+    "npm": {
+      "publish": false
+    }
   }
 }

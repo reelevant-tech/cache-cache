@@ -42,10 +42,10 @@ test('should throw if decorated fonction is a getter', async t => {
         return {}
       }
     }
+    // tslint:disable-next-line
     new Test()
-  }
-  catch (error) {
-    t.assert(error.includes('decorator only available for'))
+  } catch (error) {
+    t.assert(error.message.includes('decorator only available for'))
   }
 })
 

@@ -5,6 +5,7 @@ import { AvailableCacheLayer } from '../../types/layer'
 
 test('should fail to instanciate manager with invalid config', t => {
   t.throws(() => {
+    // tslint:disable-next-line
     new CacheLayerManager({
       layerConfigs: {},
       layerOrder: []
@@ -14,6 +15,7 @@ test('should fail to instanciate manager with invalid config', t => {
   'should fail because no layer is configured')
 
   t.throws(() => {
+    // tslint:disable-next-line
     new CacheLayerManager({
       layerConfigs: {},
       layerOrder: [
@@ -25,6 +27,7 @@ test('should fail to instanciate manager with invalid config', t => {
   'should fail because no options is given to memory layer')
 
   t.throws(() => {
+    // tslint:disable-next-line
     new CacheLayerManager({
       layerConfigs: {
         // @ts-ignore
@@ -67,7 +70,7 @@ test('manager with memory layer should works', async t => {
       AvailableCacheLayer.MEMORY
     ]
   })
-  manager.set('toto', 'tata')
+  await manager.set('toto', 'tata')
   const value = await manager.get<string>('toto')
   t.assert(value !== undefined)
   t.assert(value === 'tata')
@@ -85,11 +88,11 @@ test('manager with memory layer should be able to clear a key', async t => {
       AvailableCacheLayer.MEMORY
     ]
   })
-  manager.set('toto', 'tata')
+  await manager.set('toto', 'tata')
   const value = await manager.get<string>('toto')
   t.assert(value !== undefined)
   t.assert(value === 'tata')
-  manager.clear('toto')
+  await manager.clear('toto')
   const noValue = await manager.get<string>('toto')
   t.assert(noValue === undefined)
 })
@@ -107,7 +110,7 @@ test('manager should set value in both layer if provided', async t => {
       AvailableCacheLayer.MEMORY
     ]
   })
-  manager.set('toto', 'tata')
+  await manager.set('toto', 'tata')
   for (let layer of manager.layers) {
     const value = await layer.get<string>('toto')
     t.assert(value === 'tata')
@@ -127,9 +130,9 @@ test('manager should get in layer in the same order as provided', async t => {
       AvailableCacheLayer.MEMORY
     ]
   })
-  manager.set('toto', 'tata')
+  await manager.set('toto', 'tata')
   // change value on upper cache
-  manager.layers[1].set('toto', 'toto')
+  await manager.layers[1].set('toto', 'toto')
   const value = await manager.get<string>('toto')
   // verify that we correctly retrieve the value of the first layer
   t.assert(value === 'tata')
@@ -148,9 +151,9 @@ test('manager should get in second layer if first layer failed to find', async t
       AvailableCacheLayer.MEMORY
     ]
   })
-  manager.set('toto', 'tata')
+  await manager.set('toto', 'tata')
   // clear first level cache
-  manager.layers[0].clear('toto')
+  await manager.layers[0].clear('toto')
   const value = await manager.get<string>('toto')
   // verify that we correctly retrieve the value of the second layer
   t.assert(value === 'tata')
@@ -169,12 +172,12 @@ test('manager should clear keys in both layers', async t => {
       AvailableCacheLayer.MEMORY
     ]
   })
-  manager.set('toto', 'tata')
+  await manager.set('toto', 'tata')
   const value = await manager.get<string>('toto')
   // verify that we correctly retrieve the value
   t.assert(value === 'tata')
   // clear caches
-  manager.clear('toto')
+  await manager.clear('toto')
   // verify that all layers are empty
   const noValue = await manager.get<string>('toto')
   t.assert(noValue === undefined)

@@ -29,7 +29,7 @@ export const memoizeFunction = <T extends object | string>(
     // otherwise call the original function to compute the result
     const result = await original.call(this, ...args)
     // set the result in the caches
-    manager.set(hash, result)
+    await manager.set(hash, result)
     return result
   }
   // used to access caches state when testing

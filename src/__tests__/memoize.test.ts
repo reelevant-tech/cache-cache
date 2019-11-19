@@ -6,7 +6,6 @@ import { AvailableCacheLayer } from '../types/layer'
 import { CacheLayerManager } from '../layers/manager'
 import { MemoryCacheLayer } from '../layers/memory'
 
-
 const redisClient = new IORedis({
   host: process.env.REDIS_HOST
 })
@@ -69,11 +68,10 @@ test('should correctly fetch from cache if the result is already there', async t
   const store = manager.layers[0] as MemoryCacheLayer
   const key = store.lru.keys()[0]
   // set the cache to another value
-  store.set(key, { toto: 1 })
+  await store.set(key, { toto: 1 })
   // recall the memoized function
   t.deepEqual(await patched(), { toto: 1 })
 })
-
 
 test('should compute have two different key for different invokation', async t => {
   const asyncTest = async () => {
@@ -97,7 +95,7 @@ test('should compute have two different key for different invokation', async t =
   const store = manager.layers[0] as MemoryCacheLayer
   const key = store.lru.keys()[0]
   // set the cache to another value
-  store.set(key, { toto: 1 })
+  await store.set(key, { toto: 1 })
   // recall the memoized function
   t.deepEqual(await patched(), { toto: 1 })
   // if we change the parameters, we should use another key
