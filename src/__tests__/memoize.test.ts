@@ -1,7 +1,7 @@
 import test from 'ava'
 import IORedis from 'ioredis'
 import { AsyncFunc } from '../strategies/memoize'
-import { getMemoize } from '../index'
+import { getMemoize, useAsDefault } from '../index'
 import { AvailableCacheLayer } from '../types/layer'
 import { CacheLayerManager } from '../layers/manager'
 import { MemoryCacheLayer } from '../layers/memory'
@@ -104,7 +104,6 @@ test('should compute have two different key for different invokation', async t =
 })
 
 test('should correctly set prefix as function name', async t => {
-  await redisClient.flushall()
   const asyncTest = async () => {
     return {}
   }
@@ -125,5 +124,37 @@ test('should correctly set prefix as function name', async t => {
   t.assert(manager.layers.length === 1)
   t.assert(manager.layers[0].type === AvailableCacheLayer.REDIS)
   const keys = await redisClient.keys('asyncTest:*')
+  t.assert(keys.length === 1)
+})
+
+test('should correctly set a custom prefix', async t => {
+  const asyncTest = async () => {
+    return {}
+  }
+
+  useAsDefault({
+    layerConfigs: {
+      [AvailableCacheLayer.REDIS]: {
+        ttl: 5000,
+        redisClient
+      }
+    },
+    layerOrder: [
+      AvailableCacheLayer.REDIS
+    ]
+  })
+
+  const patched = getMemoize<Object>(asyncTest, {
+    layerConfigs: {
+      [AvailableCacheLayer.REDIS]: {
+        prefix: 'myPrefix'
+      }
+    }
+  })
+  t.deepEqual(await patched(), {})
+  const manager = getManager(patched)
+  t.assert(manager.layers.length === 1)
+  t.assert(manager.layers[0].type === AvailableCacheLayer.REDIS)
+  const keys = await redisClient.keys('myPrefix:*')
   t.assert(keys.length === 1)
 })

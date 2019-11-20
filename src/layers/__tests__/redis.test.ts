@@ -50,7 +50,7 @@ test.serial('layer should parse json value', async t => {
   t.assert(value !== undefined && value.toto === 1)
 })
 
-test.serial('layer should try to parse json value but fallback to string', async t => {
+test.serial('layer should try to parse json value but fallback to string (object)', async t => {
   const layer = new RedisCacheLayer({
     redisClient,
     ttl: 5000
@@ -58,6 +58,16 @@ test.serial('layer should try to parse json value but fallback to string', async
   await layer.set('test', '{toto')
   const value = await layer.get('test')
   t.assert(value === '{toto')
+})
+
+test.serial('layer should try to parse json value but fallback to string (array)', async t => {
+  const layer = new RedisCacheLayer({
+    redisClient,
+    ttl: 5000
+  })
+  await layer.set('test', '[toto')
+  const value = await layer.get('test')
+  t.assert(value === '[toto')
 })
 
 test.serial('layer should timeout correctly', async t => {

@@ -2,6 +2,7 @@ import { CacheLayerManagerOptions } from './layers/manager'
 import { AvailableCacheLayer } from './types/layer'
 import { memoizeFunction, AsyncFunc } from './strategies/memoize'
 import { Cache } from './strategies/store'
+import { mergeOptions, NestedPartial } from './utils/merge'
 
 const defaultConfig: CacheLayerManagerOptions = {
   layerConfigs: {
@@ -25,8 +26,8 @@ export const useAsDefault = (options: CacheLayerManagerOptions) => {
  * @param [options] {Types.CacheManagerOptions} default to memory-only cache or
  *  config given to `useAsDefault`
  */
-export const getStore = (options?: CacheLayerManagerOptions) => {
-  return new Cache(options ?? currentConfig)
+export const getStore = (options?: NestedPartial<CacheLayerManagerOptions>) => {
+  return new Cache(mergeOptions(currentConfig, options))
 }
 
 /**
@@ -36,8 +37,11 @@ export const getStore = (options?: CacheLayerManagerOptions) => {
  * @param [options] {Types.CacheManagerOptions} default to memory-only cache or
  *  config given to `useAsDefault`
  */
-export const getMemoize = <T extends object | string>(fn: AsyncFunc<T>, options?: CacheLayerManagerOptions) => {
-  return memoizeFunction<T>(fn, options ?? currentConfig)
+export const getMemoize = <T extends object | string>(
+  fn: AsyncFunc<T>,
+  options?: NestedPartial<CacheLayerManagerOptions>
+) => {
+  return memoizeFunction<T>(fn, mergeOptions(currentConfig, options))
 }
 
 /**
@@ -47,10 +51,12 @@ export const getMemoize = <T extends object | string>(fn: AsyncFunc<T>, options?
  * @param [options] {Types.CacheManagerOptions} default to memory-only cache or
  *  config given to `useAsDefault`
  */
-export const Memoize = <T extends object | string>(options?: CacheLayerManagerOptions) => {
+export const Memoize = <T extends object | string>(
+  options?: NestedPartial<CacheLayerManagerOptions>
+) => {
   return (target: Object, propertyKey: string, descriptor: TypedPropertyDescriptor<AsyncFunc<T>>) => {
     if (descriptor.value !== undefined) {
-      descriptor.value = memoizeFunction<T>(descriptor.value, options ?? currentConfig)
+      descriptor.value = memoizeFunction<T>(descriptor.value, mergeOptions(currentConfig, options))
     } else {
       throw new Error('Memoize decorator only available for async function.')
     }
