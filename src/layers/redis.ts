@@ -13,23 +13,30 @@ export interface RedisCacheLayerOptions extends CacheLayerOptions {
    * By default memoized function use their name as prefix
    */
   prefix?: string
+  /**
+   * A namespace that will be added before the prefix
+   */
+  namespace?: string
 }
 
 export class RedisCacheLayer implements CacheLayer {
   readonly type = AvailableCacheLayer.REDIS
-  private options: RedisCacheLayerOptions
   readonly client: IORedis.Redis
-  private prefix: string
+  private namespace: string = ''
+  private prefix: string = ''
 
-  constructor (options: RedisCacheLayerOptions) {
-    this.options = options
+  constructor (private options: RedisCacheLayerOptions) {
     this.client = this.options.redisClient
-    const randomPrefix = Math.random().toString(36).substring(2, 15)
-    this.prefix = `${this.options.prefix ?? randomPrefix}:`
+    if (this.options.namespace !== undefined) {
+      this.namespace = `${this.options.namespace}:`
+    }
+    if (this.options.prefix !== undefined) {
+      this.prefix = `${this.options.prefix}:`
+    }
   }
 
   private getCacheKey (key: string) {
-    return `${this.prefix}${key}`
+    return `${this.namespace}${this.prefix}${key}`
   }
 
   async get<T extends string | object> (key: string): Promise<T | undefined> {

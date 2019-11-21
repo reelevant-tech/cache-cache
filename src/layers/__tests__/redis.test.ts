@@ -122,7 +122,7 @@ test.serial('layer should implement TTL multiplier correctly', async t => {
   t.assert(value === undefined)
 })
 
-test.serial('layer should have the correct prefix', async t => {
+test.serial('layer should set the correct prefix', async t => {
   const layer = new RedisCacheLayer({
     redisClient,
     ttl: 5000,
@@ -130,6 +130,29 @@ test.serial('layer should have the correct prefix', async t => {
   })
   await layer.set('test', 'toto')
   const value = await redisClient.get('myprefix:test')
+  t.assert(value === 'toto')
+})
+
+test.serial('layer should set the correct namespace', async t => {
+  const layer = new RedisCacheLayer({
+    redisClient,
+    ttl: 5000,
+    namespace: 'mynamespace'
+  })
+  await layer.set('test', 'toto')
+  const value = await redisClient.get('mynamespace:test')
+  t.assert(value === 'toto')
+})
+
+test.serial('layer should set the correct namespace + prefix', async t => {
+  const layer = new RedisCacheLayer({
+    redisClient,
+    ttl: 5000,
+    namespace: 'mynamespace',
+    prefix: 'myprefix'
+  })
+  await layer.set('test', 'toto')
+  const value = await redisClient.get('mynamespace:myprefix:test')
   t.assert(value === 'toto')
 })
 

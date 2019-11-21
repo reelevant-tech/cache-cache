@@ -19,11 +19,9 @@ export interface MemoryCacheLayerOptions extends CacheLayerOptions {
 export class MemoryCacheLayer implements CacheLayer {
 
   readonly type = AvailableCacheLayer.MEMORY
-  private options: MemoryCacheLayerOptions
   readonly lru: LRU<string, object | string>
 
-  constructor (options: MemoryCacheLayerOptions) {
-    this.options = options
+  constructor (private options: MemoryCacheLayerOptions) {
     this.lru = new LRU<string, object | string>({
       max: this.options.maxEntries ?? 100000,
       maxAge: this.options.ttl
