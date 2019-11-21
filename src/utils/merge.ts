@@ -1,5 +1,6 @@
 
 import { CacheLayerManagerOptions } from '../layers/manager'
+import { MemoizeFunctionOptions } from '../strategies/memoize'
 
 export type NestedPartial<T> = {
   [K in keyof T]?: T[K] extends Array<infer R> ? Array<NestedPartial<R>> : NestedPartial<T[K]>
@@ -30,7 +31,7 @@ const deepAssign = (target: any, ...sources: Object[]) => {
 
 export const mergeOptions = (
   base: CacheLayerManagerOptions,
-  partial?: NestedPartial<CacheLayerManagerOptions>
+  partial?: NestedPartial<CacheLayerManagerOptions> | NestedPartial<MemoizeFunctionOptions>
 ) => {
   if (partial === undefined) return base
   // deep copy of the base
@@ -45,6 +46,12 @@ export const mergeOptions = (
   }
   if (partial?.layerConfigs?.REDIS?.redisClient !== undefined && finalOptions.layerConfigs?.REDIS !== undefined) {
     finalOptions.layerConfigs.REDIS.redisClient = partial.layerConfigs.REDIS.redisClient
+  }
+  // special case for the computeHash method that need to be a ref
+  // @ts-ignore Typescript don't want to use the `MemoizeFunctionOptions` type
+  if (partial?.computeHash !== undefined) {
+    // @ts-ignore
+    finalOptions.computeHash = partial.computeHash
   }
   return finalOptions as CacheLayerManagerOptions
 }

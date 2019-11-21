@@ -158,3 +158,39 @@ test('should correctly set a custom prefix', async t => {
   const keys = await redisClient.keys('myPrefix:*')
   t.assert(keys.length === 1)
 })
+
+test('should correctly use computeHash', async t => {
+  const asyncTest = async () => {
+    return {}
+  }
+
+  useAsDefault({
+    layerConfigs: {
+      [AvailableCacheLayer.REDIS]: {
+        ttl: 5000,
+        redisClient
+      }
+    },
+    layerOrder: [
+      AvailableCacheLayer.REDIS
+    ]
+  })
+
+  const patched = getMemoize<Object>(asyncTest, {
+    layerConfigs: {
+      [AvailableCacheLayer.REDIS]: {
+        prefix: 'myPrefix2'
+      }
+    },
+    computeHash: (args) => {
+      t.deepEqual(args, ['test'])
+      return 'my-hash'
+    }
+  })
+  t.deepEqual(await patched('test'), {})
+  const manager = getManager(patched)
+  t.assert(manager.layers.length === 1)
+  t.assert(manager.layers[0].type === AvailableCacheLayer.REDIS)
+  const keys = await redisClient.keys('myPrefix2:my-hash')
+  t.assert(keys.length === 1)
+})
