@@ -32,14 +32,12 @@ export const memoizeFunction = <T extends object | string>(
     await manager.set(hash, result)
     return result
   }
-  // used to access caches state when testing
-  if (process.env.NODE_ENV === 'test') {
-    Object.defineProperty(fn, '_cache_manager', {
-      configurable: false,
-      enumerable: false,
-      writable: false,
-      value: manager
-    })
-  }
+  // attach the cache manager to the fn if low level access is needed
+  Object.defineProperty(fn, '_cache_manager', {
+    configurable: false,
+    enumerable: false,
+    writable: false,
+    value: manager
+  })
   return fn
 }
