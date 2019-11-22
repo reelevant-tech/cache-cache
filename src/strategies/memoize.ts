@@ -6,7 +6,7 @@ export type MemoizeFunctionOptions = CacheLayerManagerOptions & {
   // Allow user to define a custom function to compute his function hash
   computeHash?: (args: unknown[]) => string
 }
-export type AsyncFunc<T extends object | string> = (...args: unknown[]) => Promise<T>
+export type AsyncFunc<T extends object | string> = (...args: any[]) => Promise<T>
 
 export const memoizeFunction = <T extends object | string>(
   original: AsyncFunc<T>,
