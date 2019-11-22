@@ -2,8 +2,11 @@ import { CacheLayerManagerOptions, CacheLayerManager } from '../layers/manager'
 import { createHash } from 'crypto'
 import { AvailableCacheLayer } from '../types/layer'
 
-export type MemoizeFunctionOptions = CacheLayerManagerOptions
-export type AsyncFunc<T extends object | string> = (...args: unknown[]) => Promise<T>
+export type MemoizeFunctionOptions = CacheLayerManagerOptions & {
+  // Allow user to define a custom function to compute his function hash
+  computeHash?: (args: unknown[]) => string
+}
+export type AsyncFunc<T extends object | string> = (...args: any[]) => Promise<T>
 
 export const memoizeFunction = <T extends object | string>(
   original: AsyncFunc<T>,
@@ -22,7 +25,12 @@ export const memoizeFunction = <T extends object | string>(
   // code that will be run when someone call our function
   const fn = async function (this: unknown, ...args: unknown[]) {
     // compute the hash for the given args
-    const hash = createHash('sha1').update(JSON.stringify(args)).digest('base64')
+    let hash: string
+    if (options.computeHash) {
+      hash = options.computeHash(args)
+    } else {
+      hash = createHash('sha1').update(JSON.stringify(args)).digest('base64')
+    }
     const value = await manager.get<T>(hash)
     // if the value is found inside caches, use it
     if (value !== undefined) return value

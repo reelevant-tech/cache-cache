@@ -1,6 +1,6 @@
 import { CacheLayerManagerOptions } from './layers/manager'
 import { AvailableCacheLayer } from './types/layer'
-import { memoizeFunction, AsyncFunc } from './strategies/memoize'
+import { memoizeFunction, AsyncFunc, MemoizeFunctionOptions } from './strategies/memoize'
 import { Cache } from './strategies/store'
 import { mergeOptions, NestedPartial } from './utils/merge'
 
@@ -39,7 +39,7 @@ export const getStore = (options?: NestedPartial<CacheLayerManagerOptions>) => {
  */
 export const getMemoize = <T extends object | string>(
   fn: AsyncFunc<T>,
-  options?: NestedPartial<CacheLayerManagerOptions>
+  options?: NestedPartial<MemoizeFunctionOptions>
 ) => {
   return memoizeFunction<T>(fn, mergeOptions(currentConfig, options))
 }
@@ -52,7 +52,7 @@ export const getMemoize = <T extends object | string>(
  *  config given to `useAsDefault`
  */
 export const Memoize = <T extends object | string>(
-  options?: NestedPartial<CacheLayerManagerOptions>
+  options?: NestedPartial<MemoizeFunctionOptions>
 ) => {
   return (target: Object, propertyKey: string, descriptor: TypedPropertyDescriptor<AsyncFunc<T>>) => {
     if (descriptor.value !== undefined) {
