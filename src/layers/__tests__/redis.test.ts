@@ -41,7 +41,6 @@ test.serial('should be able to use redis layer', async t => {
   })
   await layer.set('test', 'toto')
   const value = await layer.get('test')
-  t.log(value)
   t.assert(value === 'toto')
   await layer.clear('test')
   const noValue = await layer.get('test')
@@ -180,7 +179,6 @@ test.serial('should not throw if shallowErrors is set to true on get', async t =
     throw Error('randomError')
   }
   const noValue = await layer.get('test')
-  t.log(noValue)
   t.assert(noValue === undefined)
   redisClient.get = originalGet
 })
