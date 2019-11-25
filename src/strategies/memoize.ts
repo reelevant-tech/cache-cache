@@ -12,7 +12,7 @@ export const memoizeFunction = <T extends object | string>(
   original: AsyncFunc<T>,
   options: MemoizeFunctionOptions
 ): AsyncFunc<T> => {
-  const redisLayer = options.layerConfigs[AvailableCacheLayer.REDIS]
+  const redisLayer = options.layerConfigs?.[AvailableCacheLayer.REDIS]
   // if we use the redis layer and no one provided a prefix
   // we inject the function name if possible so it's easier to find it in the cache
   if (redisLayer !== undefined && redisLayer.prefix === undefined) {

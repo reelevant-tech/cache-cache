@@ -5,8 +5,8 @@ import { RedisCacheLayerOptions, RedisCacheLayer } from './redis'
 
 export type CacheLayerManagerOptions = {
   layerConfigs: {
-    [AvailableCacheLayer.REDIS]?: RedisCacheLayerOptions
-    [AvailableCacheLayer.MEMORY]?: MemoryCacheLayerOptions
+    [AvailableCacheLayer.REDIS]?: Partial<RedisCacheLayerOptions>
+    [AvailableCacheLayer.MEMORY]?: Partial<MemoryCacheLayerOptions>
   }
   layerOrder: AvailableCacheLayer[]
 }
@@ -16,7 +16,7 @@ export class CacheLayerManager {
 
   constructor (options: CacheLayerManagerOptions) {
     for (let layer of options.layerOrder) {
-      const layerOption = options.layerConfigs[layer]
+      const layerOption = options.layerConfigs?.[layer]
       if (layerOption === undefined) {
         throw new Error(`Layer ${layer} provided in order doesn't have associated config`)
       }
