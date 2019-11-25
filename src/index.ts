@@ -1,8 +1,10 @@
 import { CacheLayerManagerOptions } from './layers/manager'
 import { AvailableCacheLayer } from './types/layer'
 import { memoizeFunction, AsyncFunc, MemoizeFunctionOptions } from './strategies/memoize'
-import { Cache } from './strategies/store'
-import { mergeOptions, NestedPartial } from './utils/merge'
+
+type NestedPartial<T> = {
+  [K in keyof T]?: T[K] extends Array<infer R> ? Array<NestedPartial<R>> : NestedPartial<T[K]>
+}
 
 const defaultConfig: CacheLayerManagerOptions = {
   layerConfigs: {
@@ -15,7 +17,7 @@ const defaultConfig: CacheLayerManagerOptions = {
   ]
 }
 
-let currentConfig: CacheLayerManagerOptions = defaultConfig
+export let currentConfig: CacheLayerManagerOptions = defaultConfig
 
 export const useAsDefault = (options: CacheLayerManagerOptions) => {
   currentConfig = options
@@ -27,7 +29,14 @@ export const useAsDefault = (options: CacheLayerManagerOptions) => {
  *  config given to `useAsDefault`
  */
 export const getStore = (options?: NestedPartial<CacheLayerManagerOptions>) => {
-  return new Cache(mergeOptions(currentConfig, options))
+  // Why is this lazy loaded ? Good question !
+  // When we require the CacheLayerManager, it requires the MemoryLayer which
+  // in turns require the Config, which then require the index (since it access currentConfig)
+  // which then require the Store strategy, which try to require the CacheLayerManager
+  // BUT it hasn't been loaded yet, so its undefined.
+  // So we are forced to lazy load the strategy to be sure that the CacheLayerManager is here
+  const { Cache } = require('./strategies/store')
+  return new Cache(Object.assign({}, currentConfig, options))
 }
 
 /**
@@ -41,7 +50,7 @@ export const getMemoize = <T extends object | string>(
   fn: AsyncFunc<T>,
   options?: NestedPartial<MemoizeFunctionOptions>
 ) => {
-  return memoizeFunction<T>(fn, mergeOptions(currentConfig, options))
+  return memoizeFunction<T>(fn, Object.assign({}, currentConfig as MemoizeFunctionOptions, options))
 }
 
 /**
@@ -56,7 +65,7 @@ export const Memoize = <T extends object | string>(
 ) => {
   return (target: Object, propertyKey: string, descriptor: TypedPropertyDescriptor<AsyncFunc<T>>) => {
     if (descriptor.value !== undefined) {
-      descriptor.value = memoizeFunction<T>(descriptor.value, mergeOptions(currentConfig, options))
+      descriptor.value = memoizeFunction<T>(descriptor.value, Object.assign({}, currentConfig as MemoizeFunctionOptions, options))
     } else {
       throw new Error('Memoize decorator only available for async function.')
     }

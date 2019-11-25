@@ -113,3 +113,47 @@ test('should be able to overide layerConfigs for each method', async t => {
   await sleep(200)
   t.assert(layer.lru.get(key) === undefined)
 })
+
+test('should be able to change default config at runtime', async t => {
+  useAsDefault({
+    layerConfigs: {
+      [AvailableCacheLayer.MEMORY]: {
+        ttl: 10000
+      }
+    },
+    layerOrder: [
+      AvailableCacheLayer.MEMORY
+    ]
+  })
+  class Test {
+    @Memoize<Object>()
+    // @ts-ignore
+    static async toto () {
+      return {}
+    }
+  }
+
+  t.deepEqual(await Test.toto(), {})
+  const manager = getManager(Test.toto)
+  t.assert(manager.layers.length === 1)
+  t.assert(manager.layers[0].type === AvailableCacheLayer.MEMORY)
+  const layer = manager.layers[0] as MemoryCacheLayer
+  t.assert(layer.lru.keys()[0] !== undefined)
+  layer.lru.reset()
+  t.assert(layer.lru.keys()[0] === undefined)
+  useAsDefault({
+    layerConfigs: {
+      [AvailableCacheLayer.MEMORY]: {
+        ttl: 100
+      }
+    },
+    layerOrder: [
+      AvailableCacheLayer.MEMORY
+    ]
+  })
+  t.deepEqual(await Test.toto(), {})
+  const key = layer.lru.keys()[0]
+  t.assert(key !== undefined)
+  await sleep(200)
+  t.assert(layer.lru.get('key') === undefined)
+})

@@ -1,6 +1,7 @@
 
 import { CacheLayer, AvailableCacheLayer, CacheLayerOptions } from '../types/layer'
 import LRU from 'lru-cache'
+import { getConfig } from '../utils/config'
 
 export interface MemoryCacheLayerOptions extends CacheLayerOptions {
   /**
@@ -23,9 +24,13 @@ export class MemoryCacheLayer implements CacheLayer {
 
   constructor (private options: MemoryCacheLayerOptions) {
     this.lru = new LRU<string, object | string>({
-      max: this.options.maxEntries ?? 100000,
-      maxAge: this.options.ttl
+      max: this.getConfig<number>('maxEntries') ?? 100000,
+      maxAge: this.getConfig<number>('ttl')
     })
+  }
+
+  private getConfig <T> (key: keyof MemoryCacheLayerOptions): T | undefined {
+    return getConfig<MemoryCacheLayerOptions, T>(key, this.options, this.type)
   }
 
   async get<T extends object | string> (key: string): Promise<T | undefined> {
@@ -34,8 +39,8 @@ export class MemoryCacheLayer implements CacheLayer {
   }
 
   async set<T extends object | string> (key: string, object: T, ttl?: number): Promise<void> {
-    const customTTL = ttl !== undefined ? ttl * (this.options.ttlMultiplier ?? 1) : undefined
-    this.lru.set(key, object, customTTL ?? this.options.ttl)
+    const customTTL = ttl !== undefined ? ttl * (this.getConfig<number>('ttlMultiplier') ?? 1) : undefined
+    this.lru.set(key, object, customTTL ?? this.getConfig<number>('ttl'))
   }
 
   async clear (key: string): Promise<void> {

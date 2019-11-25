@@ -17,6 +17,15 @@ test.afterEach(async t => {
   await redisClient.flushall()
 })
 
+test.serial('should fail to instanciate redis if no client is given', async t => {
+  t.throws(() => {
+    // @ts-ignore
+    const layer = new RedisCacheLayer({
+      ttl: 5000
+    })
+  })
+})
+
 test.serial('should instanciate redis layer succesfully', async t => {
   const layer = new RedisCacheLayer({
     redisClient,

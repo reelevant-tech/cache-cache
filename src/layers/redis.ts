@@ -2,6 +2,7 @@
 import { CacheLayer, AvailableCacheLayer, CacheLayerOptions } from '../types/layer'
 import IORedis from 'ioredis'
 import of from '../utils/of'
+import { getConfig } from '../utils/config'
 
 export interface RedisCacheLayerOptions extends CacheLayerOptions {
   /**
@@ -26,12 +27,18 @@ export class RedisCacheLayer implements CacheLayer {
   private prefix: string = ''
 
   constructor (private options: RedisCacheLayerOptions) {
-    this.client = this.options.redisClient
-    if (this.options.namespace !== undefined) {
-      this.namespace = `${this.options.namespace}:`
+    const redis = this.getConfig<IORedis.Redis>('redisClient')
+    if (redis === undefined) {
+      throw new Error(`RedisCacheLayer cannot be instanciated without a redisClient`)
     }
-    if (this.options.prefix !== undefined) {
-      this.prefix = `${this.options.prefix}:`
+    this.client = redis
+    const namespace = this.getConfig<string>('namespace')
+    if (namespace !== undefined) {
+      this.namespace = `${namespace}:`
+    }
+    const prefix = this.getConfig<string>('prefix')
+    if (prefix !== undefined) {
+      this.prefix = `${prefix}:`
     }
   }
 
@@ -39,15 +46,20 @@ export class RedisCacheLayer implements CacheLayer {
     return `${this.namespace}${this.prefix}${key}`
   }
 
+  private getConfig <T> (key: keyof RedisCacheLayerOptions): T | undefined {
+    return getConfig<RedisCacheLayerOptions, T>(key, this.options, this.type)
+  }
+
   async get<T extends string | object> (key: string): Promise<T | undefined> {
     const promises: Array<Promise<string | undefined | null>> = [
       this.client.get(this.getCacheKey(key))
     ]
-    if (this.options.timeout !== undefined) {
-      promises.push(this.sleep(this.options.timeout))
+    const timeout = this.getConfig<number>('timeout')
+    if (timeout !== undefined) {
+      promises.push(this.sleep(timeout))
     }
     const [ result, err ] = await of(Promise.race(promises))
-    if (err !== undefined && this.options.shallowErrors !== true) {
+    if (err !== undefined && this.getConfig('shallowErrors') !== true) {
       throw err
     }
 
@@ -67,17 +79,17 @@ export class RedisCacheLayer implements CacheLayer {
   }
 
   async set<T extends object | string> (key: string, object: T, ttl?: number): Promise<void> {
-    const customTTL = ttl !== undefined ? ttl * (this.options.ttlMultiplier ?? 1) : undefined
+    const customTTL = ttl !== undefined ? ttl * (this.getConfig<number>('ttlMultiplier') ?? 1) : undefined
     const value = typeof object !== 'string' ? JSON.stringify(object) : (object as string)
-    const res = await of(this.client.set(this.getCacheKey(key), value, 'PX', customTTL ?? this.options.ttl))
-    if (res[1] !== undefined && this.options.shallowErrors !== true) {
+    const res = await of(this.client.set(this.getCacheKey(key), value, 'PX', customTTL ?? this.getConfig<number>('ttl')))
+    if (res[1] !== undefined && this.getConfig('shallowErrors') !== true) {
       throw res[1]
     }
   }
 
   async clear (key: string): Promise<void> {
     let res = await of(this.client.del(this.getCacheKey(key)))
-    if (res[1] !== undefined && this.options.shallowErrors !== true) {
+    if (res[1] !== undefined && this.getConfig('shallowErrors') !== true) {
       throw res[1]
     }
   }
