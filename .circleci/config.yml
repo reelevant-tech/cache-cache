@@ -48,7 +48,7 @@ jobs:
           command: echo "//registry.npmjs.org/:_authToken=${NPM_PUBLISH_TOKEN}" > "${HOME}/.npmrc"
       - run:
           name: Release
-          command: npm publish
+          command: npm publish --access=public
       - run:
           name: Add github release
           command: npm run gh-release
