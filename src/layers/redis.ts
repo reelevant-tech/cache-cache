@@ -71,7 +71,7 @@ export class RedisCacheLayer implements CacheLayer {
     // otherwise try to parse it
     try {
       const parsedResult = JSON.parse(result)
-      return parsedResult as T
+      return (parsedResult?.type === 'Buffer' ? Buffer.from(parsedResult) : parsedResult) as T
     } catch (err) {
       // if it fail, we can guess its just a string with { or [ leading char
       return result as T
