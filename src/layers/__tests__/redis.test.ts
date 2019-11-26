@@ -262,3 +262,15 @@ test.serial('should throw if shallowErrors is set to false on clear', async t =>
   await t.throwsAsync(() => layer.clear('test'))
   redisClient.del = originalDel
 })
+
+test.serial('should be able to use redis layer with buffer', async t => {
+  const layer = new RedisCacheLayer({
+    redisClient,
+    ttl: 5000
+  })
+  const buf = Buffer.from('toto')
+  await layer.set('test', buf)
+  const value = await layer.get<Buffer>('test')
+  t.assert(value instanceof Buffer)
+  t.assert(Buffer.compare(buf, value) === 0)
+})
