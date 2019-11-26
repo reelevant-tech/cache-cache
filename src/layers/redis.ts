@@ -22,25 +22,8 @@ export interface RedisCacheLayerOptions extends CacheLayerOptions {
 
 export class RedisCacheLayer implements CacheLayer {
   readonly type = AvailableCacheLayer.REDIS
-  readonly client: IORedis.Redis
-  private namespace: string = ''
-  private prefix: string = ''
 
-  constructor (private options: RedisCacheLayerOptions) {
-    const redis = this.getConfig<IORedis.Redis>('redisClient')
-    if (redis === undefined) {
-      throw new Error(`RedisCacheLayer cannot be instanciated without a redisClient`)
-    }
-    this.client = redis
-    const namespace = this.getConfig<string>('namespace')
-    if (namespace !== undefined) {
-      this.namespace = `${namespace}:`
-    }
-    const prefix = this.getConfig<string>('prefix')
-    if (prefix !== undefined) {
-      this.prefix = `${prefix}:`
-    }
-  }
+  constructor (private options: RedisCacheLayerOptions) {}
 
   private getCacheKey (key: string) {
     return `${this.namespace}${this.prefix}${key}`
@@ -98,5 +81,24 @@ export class RedisCacheLayer implements CacheLayer {
     return new Promise((resolve) => {
       return setTimeout(resolve, timeout)
     })
+  }
+
+  get prefix () {
+    const prefix = this.getConfig<string>('prefix')
+    return prefix ? `${prefix}:` : ''
+  }
+
+  get namespace () {
+    const namespace = this.getConfig<string>('namespace')
+    return namespace ? `${namespace}:` : ''
+  }
+
+  get client (): IORedis.Redis {
+    const redis = this.getConfig<IORedis.Redis>('redisClient')
+    if (redis === undefined) {
+      throw new Error(`RedisCacheLayer cannot be instanciated without a redisClient`)
+    } else {
+      return redis
+    }
   }
 }

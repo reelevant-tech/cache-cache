@@ -1,5 +1,19 @@
-import { currentConfig } from '../index'
+
 import { CacheLayerOptions, AvailableCacheLayer } from '../types/layer'
+import { CacheLayerManagerOptions } from '../layers/manager'
+
+const defaultConfig: CacheLayerManagerOptions = {
+  layerConfigs: {
+    [AvailableCacheLayer.MEMORY]: {
+      ttl: 15 * 1000
+    }
+  },
+  layerOrder: [
+    AvailableCacheLayer.MEMORY
+  ]
+}
+
+export let currentConfig: CacheLayerManagerOptions = defaultConfig
 
 /**
  * Fetch a config value from either the local or global options
