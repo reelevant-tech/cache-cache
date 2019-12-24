@@ -1,10 +1,11 @@
 import { CacheLayerManagerOptions } from './layers/manager'
 import { currentConfig } from './utils/config'
-import { memoizeFunction, AsyncFunc, MemoizeFunctionOptions } from './strategies/memoize'
+import { memoizeFunction, MemoizeFunctionOptions } from './strategies/memoize'
 import { Cache } from './strategies/store'
+import { AsyncFunc, Func } from './types/common'
 
 type NestedPartial<T> = {
-  [K in keyof T]?: T[K] extends Array<infer R> ? Array<NestedPartial<R>> : NestedPartial<T[K]>
+  [K in keyof T]?: T[K] extends Array<infer R> ? Array<NestedPartial<R>> : T[K] extends Function ? T[K] : NestedPartial<T[K]>
 }
 
 export const useAsDefault = (options: CacheLayerManagerOptions) => {
@@ -35,10 +36,10 @@ export const getStore = (options?: NestedPartial<CacheLayerManagerOptions>) => {
  *  config given to `useAsDefault`
  */
 export const getMemoize = <T extends object | string>(
-  fn: AsyncFunc<T>,
-  options?: NestedPartial<MemoizeFunctionOptions>
+  fn: Func<T>,
+  options?: NestedPartial<MemoizeFunctionOptions<T>>
 ) => {
-  return memoizeFunction<T>(fn, options as MemoizeFunctionOptions)
+  return memoizeFunction<T>(fn, options as MemoizeFunctionOptions<T>)
 }
 
 /**
@@ -49,11 +50,11 @@ export const getMemoize = <T extends object | string>(
  *  config given to `useAsDefault`
  */
 export const Memoize = <T extends object | string>(
-  options?: NestedPartial<MemoizeFunctionOptions>
+  options?: NestedPartial<MemoizeFunctionOptions<T>>
 ) => {
   return (target: Object, propertyKey: string, descriptor: TypedPropertyDescriptor<AsyncFunc<T>>) => {
     if (descriptor.value !== undefined) {
-      descriptor.value = getMemoize<T>(descriptor.value, options)
+      descriptor.value = getMemoize<T>(descriptor.value as Func<T>, options)
     } else {
       throw new Error('Memoize decorator only available for async function.')
     }
