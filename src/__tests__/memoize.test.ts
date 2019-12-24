@@ -1,6 +1,6 @@
 import test from 'ava'
 import IORedis from 'ioredis'
-import { AsyncFunc } from '../strategies/memoize'
+import { AsyncFunc } from '../types/common'
 import { getMemoize, useAsDefault } from '../index'
 import { AvailableCacheLayer } from '../types/layer'
 import { CacheLayerManager } from '../layers/manager'
@@ -25,7 +25,7 @@ test('should correctly store fn result inside the cache', async t => {
     return {}
   }
 
-  const patched = getMemoize<Object>(asyncTest, {
+  const patched = getMemoize<typeof asyncTest>(asyncTest, {
     layerConfigs: {
       [AvailableCacheLayer.MEMORY]: {
         ttl: 5000,
@@ -51,7 +51,7 @@ test('should correctly fetch from cache if the result is already there', async t
     return {}
   }
 
-  const patched = getMemoize<Object>(asyncTest, {
+  const patched = getMemoize<typeof asyncTest>(asyncTest, {
     layerConfigs: {
       [AvailableCacheLayer.MEMORY]: {
         ttl: 5000,
@@ -74,11 +74,11 @@ test('should correctly fetch from cache if the result is already there', async t
 })
 
 test('should compute have two different key for different invokation', async t => {
-  const asyncTest = async () => {
+  const asyncTest = async (t?: number) => {
     return {}
   }
 
-  const patched = getMemoize<Object>(asyncTest, {
+  const patched = getMemoize<typeof asyncTest>(asyncTest, {
     layerConfigs: {
       [AvailableCacheLayer.MEMORY]: {
         ttl: 5000,
@@ -108,7 +108,7 @@ test('should correctly set prefix as function name', async t => {
     return {}
   }
 
-  const patched = getMemoize<Object>(asyncTest, {
+  const patched = getMemoize<typeof asyncTest>(asyncTest, {
     layerConfigs: {
       [AvailableCacheLayer.REDIS]: {
         ttl: 5000,
@@ -144,7 +144,7 @@ test('should correctly set a custom prefix', async t => {
     ]
   })
 
-  const patched = getMemoize<Object>(asyncTest, {
+  const patched = getMemoize<typeof asyncTest>(asyncTest, {
     layerConfigs: {
       [AvailableCacheLayer.REDIS]: {
         prefix: 'myPrefix'
@@ -160,7 +160,7 @@ test('should correctly set a custom prefix', async t => {
 })
 
 test('should correctly use computeHash', async t => {
-  const asyncTest = async () => {
+  const asyncTest = async (test: string, foo?: number) => {
     return {}
   }
 
@@ -176,7 +176,7 @@ test('should correctly use computeHash', async t => {
     ]
   })
 
-  const patched = getMemoize<Object>(asyncTest, {
+  const patched = getMemoize<typeof asyncTest>(asyncTest, {
     layerConfigs: {
       [AvailableCacheLayer.REDIS]: {
         prefix: 'myPrefix2'

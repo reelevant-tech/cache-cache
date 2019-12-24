@@ -2,21 +2,21 @@ import { CacheLayerManagerOptions, CacheLayerManager } from '../layers/manager'
 import { createHash } from 'crypto'
 import { AvailableCacheLayer } from '../types/layer'
 import { currentConfig } from '../utils/config'
+import { Func, AsyncFunc, Parameters, ReturnType } from '../types/common'
 
-export type MemoizeFunctionOptions = CacheLayerManagerOptions & {
+export type MemoizeFunctionOptions<T> = CacheLayerManagerOptions & {
   // Allow user to define a custom function to compute his function hash
-  computeHash?: (args: unknown[]) => string
+  computeHash?: (args: Parameters<T>) => string
 }
-export type AsyncFunc<T extends object | string> = (...args: any[]) => Promise<T>
 
 export const memoizeFunction = <T extends object | string>(
-  original: AsyncFunc<T>,
-  partial: Partial<MemoizeFunctionOptions>
+  original: Func<T>,
+  partial: Partial<MemoizeFunctionOptions<T>>
 ): AsyncFunc<T> => {
   let manager: CacheLayerManager | undefined
-  let options: MemoizeFunctionOptions
+  let options: MemoizeFunctionOptions<T>
   // code that will be run when someone call our function
-  const fn = async function (this: unknown, ...args: unknown[]) {
+  const fn = async function (this: unknown, ...args: Parameters<T>) {
     if (manager === undefined) {
       options = Object.assign({}, currentConfig, partial)
       const redisLayer = options.layerConfigs?.[AvailableCacheLayer.REDIS]
@@ -42,13 +42,14 @@ export const memoizeFunction = <T extends object | string>(
     } else {
       hash = createHash('sha1').update(JSON.stringify(args)).digest('base64')
     }
-    const value = await manager.get<T>(hash)
+    const value = await manager.get<ReturnType<T>>(hash)
     // if the value is found inside caches, use it
     if (value !== undefined) return value
     // otherwise call the original function to compute the result
+    // tslint:disable-next-line: await-promise
     const result = await original.call(this, ...args)
     // set the result in the caches
-    await manager.set(hash, result)
+    await manager.set<ReturnType<T>>(hash, result)
     return result
   }
   return fn
