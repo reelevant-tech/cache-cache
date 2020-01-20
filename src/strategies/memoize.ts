@@ -11,7 +11,7 @@ export type MemoizeFunctionOptions<T> = CacheLayerManagerOptions & {
 
 export const memoizeFunction = <T extends object | string>(
   original: Func<T>,
-  partial: Partial<MemoizeFunctionOptions<T>>
+  partial: Partial<MemoizeFunctionOptions<T>> = {}
 ): AsyncFunc<T> => {
   let manager: CacheLayerManager | undefined
   let options: MemoizeFunctionOptions<T>
