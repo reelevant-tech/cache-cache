@@ -169,9 +169,14 @@ test('should correctly use computeHash', async t => {
       [AvailableCacheLayer.REDIS]: {
         ttl: 5000,
         redisClient
+      },
+      [AvailableCacheLayer.MEMORY]: {
+        ttl: 10,
+        maxEntries: 1
       }
     },
     layerOrder: [
+      AvailableCacheLayer.MEMORY,
       AvailableCacheLayer.REDIS
     ]
   })
@@ -189,8 +194,8 @@ test('should correctly use computeHash', async t => {
   })
   t.deepEqual(await patched('test'), {})
   const manager = getManager(patched)
-  t.assert(manager.layers.length === 1)
-  t.assert(manager.layers[0].type === AvailableCacheLayer.REDIS)
+  t.assert(manager.layers.length === 2)
+  t.assert(manager.layers[1].type === AvailableCacheLayer.REDIS)
   const keys = await redisClient.keys('myPrefix2:my-hash')
   t.assert(keys.length === 1)
 })
