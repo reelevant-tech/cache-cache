@@ -11,14 +11,18 @@ export type MemoizeFunctionOptions<T> = CacheLayerManagerOptions & {
 
 export const memoizeFunction = <T extends object | string>(
   original: Func<T>,
-  partial: Partial<MemoizeFunctionOptions<T>>
+  partial: Partial<MemoizeFunctionOptions<T>> = {}
 ): AsyncFunc<T> => {
   let manager: CacheLayerManager | undefined
   let options: MemoizeFunctionOptions<T>
   // code that will be run when someone call our function
   const fn = async function (this: unknown, ...args: Parameters<T>) {
     if (manager === undefined) {
-      options = Object.assign({}, currentConfig, partial)
+      options = {
+        ...partial,
+        layerConfigs: { ...currentConfig.layerConfigs, ...partial.layerConfigs },
+        layerOrder: partial.layerOrder || currentConfig.layerOrder
+      }
       const redisLayer = options.layerConfigs?.[AvailableCacheLayer.REDIS]
       // if we use the redis layer and no one provided a prefix
       // we inject the function name if possible so it's easier to find it in the cache
