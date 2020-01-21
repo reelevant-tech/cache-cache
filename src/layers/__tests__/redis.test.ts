@@ -275,3 +275,34 @@ test.serial('should be able to use redis layer with buffer', async t => {
   t.assert(value instanceof Buffer)
   t.assert(Buffer.compare(buf, value) === 0)
 })
+
+test.serial('layer should throw error on hashmap mode without prefix or namespace', async t => {
+  const layer = new RedisCacheLayer({
+    redisClient,
+    ttl: 5000,
+    hashmap: true
+  })
+  await t.throwsAsync(() => layer.set('test', 'toto'), 'You need to configure prefix or namespace to use hashmap mode')
+  await t.throwsAsync(() => layer.set('test', undefined), 'Invalid set command, ttl and value are required')
+})
+
+test.serial('layer should set the correct namespace + prefix with hashmap mode', async t => {
+  const layer = new RedisCacheLayer({
+    redisClient,
+    ttl: 5000,
+    hashmap: true,
+    namespace: 'mynamespace',
+    prefix: 'myprefix'
+  })
+  await layer.set('test', 'toto')
+  await layer.set('test2', 'toto')
+  const value = await redisClient.hget('mynamespace:myprefix', 'test')
+  t.assert(value === 'toto')
+  const value2 = await redisClient.hget('mynamespace:myprefix', 'test2')
+  t.assert(value2 === 'toto')
+  await layer.clear('test')
+  const clearedValue = await redisClient.hget('mynamespace:myprefix', 'test')
+  t.assert(clearedValue === null)
+  const clearedValue2 = await redisClient.hget('mynamespace:myprefix', 'test2')
+  t.assert(clearedValue2 === 'toto')
+})

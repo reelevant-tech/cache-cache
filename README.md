@@ -153,7 +153,7 @@ const obj = await store.get('key')
 ## Typescript typing
 
 Since the data stored inside the cache isn't typed, by default you will only get raw object as type when fetching from cache.
-We implement our API to accept a generic argument that is the type of what is stored inside the cache:
+We implement our API to accept a generic argument that is the type of the memoized function:
 
 ```ts
 import { Memoize } from '@rlvt/cache-cache'
@@ -163,8 +163,8 @@ type Person = {
  name: number
 }
 
-@Memoize<Person>()
-const expensiveFunction = async () => {
+@Memoize<typeof expensiveFunction>()
+const expensiveFunction = async (): Person => {
   // do something expensive
   return {}
 }
@@ -213,7 +213,13 @@ type Config = {
        * A custom prefix used to differenciate keys
        * By default memoized function use their name as prefix
        */
-      prefix?: string
+      prefix?: string,
+      /**
+       * Enable or not the hashmap mode. When enabled, cache-cache will use
+       * redis' hashmaps (hget/hset) with namespace+prefix as key and hash as field
+       * NOTE: The expiration is set on the hashmap
+       */
+      hashmap?: boolean = false
     }
     [AvailableCacheLayer.MEMORY]?: {
       /**
