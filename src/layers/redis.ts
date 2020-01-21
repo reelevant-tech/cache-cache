@@ -17,7 +17,18 @@ export interface RedisCacheLayerOptions extends CacheLayerOptions {
   /**
    * A namespace that will be added before the prefix
    */
-  namespace?: string
+  namespace?: string,
+  /**
+   * Enable or not the hashmap mode. When enabled, cache-cache will use
+   * redis' hashmaps (hget/hset) with namespace+prefix as key and hash as field
+   */
+  hashmap?: boolean
+}
+
+enum CommandAction {
+  GET = 'get',
+  SET = 'set',
+  DEL = 'del'
 }
 
 export class RedisCacheLayer implements CacheLayer {
@@ -29,13 +40,42 @@ export class RedisCacheLayer implements CacheLayer {
     return `${this.namespace}${this.prefix}${key}`
   }
 
+  private getCommandAndParams (action: CommandAction, key: string, value?: unknown, ttl?: number): () => Promise<any> {
+    if (action === CommandAction.SET && (ttl === undefined || value === undefined)) {
+      throw new Error('Invalid set command, ttl and value are required')
+    }
+    if (this.hashmap === true) {
+      let hashmapKey = `${this.namespace}${this.prefix}`
+      hashmapKey = hashmapKey.substr(0, hashmapKey.length - 1)
+      switch (action) {
+        case CommandAction.DEL:
+          return () => this.client.hdel(hashmapKey, key)
+        case CommandAction.GET:
+          return () => this.client.hget(hashmapKey, key)
+        case CommandAction.SET:
+          return async () => {
+            await this.client.hset(hashmapKey, key, value)
+            return this.client.pexpire(hashmapKey, ttl!)
+          }
+      }
+    }
+    switch (action) {
+      case CommandAction.DEL:
+        return () => this.client.del(this.getCacheKey(key))
+      case CommandAction.GET:
+        return () => this.client.get(this.getCacheKey(key))
+      case CommandAction.SET:
+        return () => this.client.set(this.getCacheKey(key), value, 'PX', ttl)
+    }
+  }
+
   private getConfig <T> (key: keyof RedisCacheLayerOptions): T | undefined {
     return getConfig<RedisCacheLayerOptions, T>(key, this.options, this.type)
   }
 
   async get<T extends string | object> (key: string): Promise<T | undefined> {
     const promises: Array<Promise<string | undefined | null>> = [
-      this.client.get(this.getCacheKey(key))
+      this.getCommandAndParams(CommandAction.GET, key)()
     ]
     const timeout = this.getConfig<number>('timeout')
     if (timeout !== undefined) {
@@ -64,14 +104,14 @@ export class RedisCacheLayer implements CacheLayer {
   async set<T extends object | string> (key: string, object: T, ttl?: number): Promise<void> {
     const customTTL = ttl !== undefined ? ttl * (this.getConfig<number>('ttlMultiplier') ?? 1) : undefined
     const value = typeof object !== 'string' ? JSON.stringify(object) : (object as string)
-    const res = await of(this.client.set(this.getCacheKey(key), value, 'PX', customTTL ?? this.getConfig<number>('ttl')))
+    const res = await of(this.getCommandAndParams(CommandAction.SET, key, value, customTTL ?? this.getConfig<number>('ttl'))())
     if (res[1] !== undefined && this.getConfig('shallowErrors') !== true) {
       throw res[1]
     }
   }
 
   async clear (key: string): Promise<void> {
-    let res = await of(this.client.del(this.getCacheKey(key)))
+    let res = await of(this.getCommandAndParams(CommandAction.DEL, key)())
     if (res[1] !== undefined && this.getConfig('shallowErrors') !== true) {
       throw res[1]
     }
@@ -91,6 +131,14 @@ export class RedisCacheLayer implements CacheLayer {
   get namespace () {
     const namespace = this.getConfig<string>('namespace')
     return namespace ? `${namespace}:` : ''
+  }
+
+  get hashmap () {
+    const hashmap = this.getConfig<boolean>('hashmap')
+    if (hashmap === true && (this.namespace === '' || this.prefix === '')) {
+      throw new Error('You need to configure prefix or namespace to use hashmap mode')
+    }
+    return hashmap
   }
 
   get client (): IORedis.Redis {
