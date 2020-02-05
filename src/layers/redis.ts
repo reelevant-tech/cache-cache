@@ -135,7 +135,7 @@ export class RedisCacheLayer implements CacheLayer {
 
   get hashmap () {
     const hashmap = this.getConfig<boolean>('hashmap')
-    if (hashmap === true && (this.namespace === '' || this.prefix === '')) {
+    if (hashmap === true && this.namespace === '' && this.prefix === '') {
       throw new Error('You need to configure prefix or namespace to use hashmap mode')
     }
     return hashmap
