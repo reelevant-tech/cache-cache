@@ -276,6 +276,26 @@ test.serial('should be able to use redis layer with buffer', async t => {
   t.assert(Buffer.compare(buf, value) === 0)
 })
 
+test.serial('layer should not throw error on hashmap mode without prefix', async t => {
+  const layer = new RedisCacheLayer({
+    redisClient,
+    ttl: 5000,
+    hashmap: true,
+    prefix: 'test'
+  })
+  await t.notThrowsAsync(() => layer.set('test', 'toto'), 'You need to configure prefix or namespace to use hashmap mode')
+})
+
+test.serial('layer should not throw error on hashmap mode without namespace', async t => {
+  const layer = new RedisCacheLayer({
+    redisClient,
+    ttl: 5000,
+    hashmap: true,
+    namespace: 'test'
+  })
+  await t.notThrowsAsync(() => layer.set('test', 'toto'), 'You need to configure prefix or namespace to use hashmap mode')
+})
+
 test.serial('layer should throw error on hashmap mode without prefix or namespace', async t => {
   const layer = new RedisCacheLayer({
     redisClient,
