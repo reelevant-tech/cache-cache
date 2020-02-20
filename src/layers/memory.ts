@@ -20,7 +20,7 @@ export interface MemoryCacheLayerOptions extends CacheLayerOptions {
 export class MemoryCacheLayer implements CacheLayer {
 
   readonly type = AvailableCacheLayer.MEMORY
-  readonly lru: LRU<string, object | string>
+  readonly lru: LRU<string, object | string | null | undefined>
 
   constructor (private options: MemoryCacheLayerOptions) {
     this.lru = new LRU<string, object | string>({
@@ -33,12 +33,12 @@ export class MemoryCacheLayer implements CacheLayer {
     return getConfig<MemoryCacheLayerOptions, T>(key, this.options, this.type)
   }
 
-  async get<T extends object | string> (key: string): Promise<T | undefined> {
+  async get<T extends object | string | null | undefined> (key: string): Promise<T | undefined> {
     // no race is implemented since fetching in memory is sync
     return this.lru.get(key) as T | undefined
   }
 
-  async set<T extends object | string> (key: string, object: T, ttl?: number): Promise<void> {
+  async set<T extends object | string | null | undefined> (key: string, object: T, ttl?: number): Promise<void> {
     const customTTL = ttl !== undefined ? ttl * (this.getConfig<number>('ttlMultiplier') ?? 1) : undefined
     this.lru.set(key, object, customTTL ?? this.getConfig<number>('ttl'))
   }
