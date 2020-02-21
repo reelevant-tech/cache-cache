@@ -199,3 +199,93 @@ test('should correctly use computeHash', async t => {
   const keys = await redisClient.keys('myPrefix2:my-hash')
   t.assert(keys.length === 1)
 })
+
+test('should work with null', async t => {
+  t.plan(6)
+  const asyncTest = async () => {
+    t.true(true) // ensure fn is called two time only (memory+redis)
+    return null
+  }
+
+  useAsDefault({
+    layerConfigs: {
+      [AvailableCacheLayer.REDIS]: {
+        ttl: 5000,
+        redisClient
+      },
+      [AvailableCacheLayer.MEMORY]: {
+        ttl: 10,
+        maxEntries: 1
+      }
+    },
+    layerOrder: [
+      AvailableCacheLayer.MEMORY,
+      AvailableCacheLayer.REDIS
+    ]
+  })
+
+  const patchedWithMemory = getMemoize<typeof asyncTest>(asyncTest, {
+    layerOrder: [
+      AvailableCacheLayer.MEMORY
+    ]
+  })
+  t.deepEqual(await patchedWithMemory(), null)
+  t.deepEqual(await patchedWithMemory(), null)
+
+  const patchedWithRedis = getMemoize<typeof asyncTest>(asyncTest, {
+    layerConfigs: {
+      [AvailableCacheLayer.REDIS]: {
+        prefix: 'null-test'
+      }
+    },
+    layerOrder: [
+      AvailableCacheLayer.REDIS
+    ]
+  })
+  t.deepEqual(await patchedWithRedis(), null)
+  t.deepEqual(await patchedWithRedis(), null)
+})
+
+test('should work with undefined', async t => {
+  const asyncTest = async () => {
+    return undefined
+  }
+
+  useAsDefault({
+    layerConfigs: {
+      [AvailableCacheLayer.REDIS]: {
+        ttl: 5000,
+        redisClient
+      },
+      [AvailableCacheLayer.MEMORY]: {
+        ttl: 10,
+        maxEntries: 1
+      }
+    },
+    layerOrder: [
+      AvailableCacheLayer.MEMORY,
+      AvailableCacheLayer.REDIS
+    ]
+  })
+
+  const patchedWithMemory = getMemoize<typeof asyncTest>(asyncTest, {
+    layerOrder: [
+      AvailableCacheLayer.MEMORY
+    ]
+  })
+  t.deepEqual(await patchedWithMemory(), undefined)
+  t.deepEqual(await patchedWithMemory(), undefined)
+
+  const patchedWithRedis = getMemoize<typeof asyncTest>(asyncTest, {
+    layerConfigs: {
+      [AvailableCacheLayer.REDIS]: {
+        prefix: 'undefined-test'
+      }
+    },
+    layerOrder: [
+      AvailableCacheLayer.REDIS
+    ]
+  })
+  t.deepEqual(await patchedWithRedis(), undefined)
+  t.deepEqual(await patchedWithRedis(), undefined)
+})

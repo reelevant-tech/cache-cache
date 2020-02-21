@@ -77,6 +77,8 @@ Things to know:
 
 **NOTE**: You can only memoize `async` function since call to cache can be asynchronous
 
+**WARNING**: If your function returns `undefined`, it will not be cached, prefer using `null`.
+
 You currently have two API to memoize a function:
 
 - if you are in Typescript, you can use the `@Memoize` decorator

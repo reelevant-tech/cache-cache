@@ -73,7 +73,7 @@ export class RedisCacheLayer implements CacheLayer {
     return getConfig<RedisCacheLayerOptions, T>(key, this.options, this.type)
   }
 
-  async get<T extends string | object> (key: string): Promise<T | undefined> {
+  async get<T extends string | object | null | undefined> (key: string): Promise<T | undefined> {
     const promises: Array<Promise<string | undefined | null>> = [
       this.getCommandAndParams(CommandAction.GET, key)()
     ]
@@ -87,23 +87,18 @@ export class RedisCacheLayer implements CacheLayer {
     }
 
     if (result === null || result === undefined) return undefined
-    // check if it's not a json object, we can return as a string
-    if (result[0] !== '{' && result[0] !== '[') {
-      return result as T
-    }
-    // otherwise try to parse it
+    if (result === 'undefined') return undefined as T
     try {
       const parsedResult = JSON.parse(result)
       return (parsedResult?.type === 'Buffer' ? Buffer.from(parsedResult) : parsedResult) as T
     } catch (err) {
-      // if it fail, we can guess its just a string with { or [ leading char
       return result as T
     }
   }
 
-  async set<T extends object | string> (key: string, object: T, ttl?: number): Promise<void> {
+  async set<T extends object | string | null | undefined> (key: string, object: T, ttl?: number): Promise<void> {
     const customTTL = ttl !== undefined ? ttl * (this.getConfig<number>('ttlMultiplier') ?? 1) : undefined
-    const value = typeof object !== 'string' ? JSON.stringify(object) : (object as string)
+    const value = typeof object === 'undefined' ? 'undefined' : JSON.stringify(object)
     const res = await of(this.getCommandAndParams(CommandAction.SET, key, value, customTTL ?? this.getConfig<number>('ttl'))())
     if (res[1] !== undefined && this.getConfig('shallowErrors') !== true) {
       throw res[1]

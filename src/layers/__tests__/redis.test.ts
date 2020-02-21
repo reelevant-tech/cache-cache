@@ -139,7 +139,7 @@ test.serial('layer should set the correct prefix', async t => {
   })
   await layer.set('test', 'toto')
   const value = await redisClient.get('myprefix:test')
-  t.assert(value === 'toto')
+  t.assert(value === '"toto"')
 })
 
 test.serial('layer should set the correct namespace', async t => {
@@ -150,7 +150,7 @@ test.serial('layer should set the correct namespace', async t => {
   })
   await layer.set('test', 'toto')
   const value = await redisClient.get('mynamespace:test')
-  t.assert(value === 'toto')
+  t.assert(value === '"toto"')
 })
 
 test.serial('layer should set the correct namespace + prefix', async t => {
@@ -162,7 +162,7 @@ test.serial('layer should set the correct namespace + prefix', async t => {
   })
   await layer.set('test', 'toto')
   const value = await redisClient.get('mynamespace:myprefix:test')
-  t.assert(value === 'toto')
+  t.assert(value === '"toto"')
 })
 
 test.serial('should not throw if shallowErrors is set to true on get', async t => {
@@ -303,7 +303,6 @@ test.serial('layer should throw error on hashmap mode without prefix or namespac
     hashmap: true
   })
   await t.throwsAsync(() => layer.set('test', 'toto'), 'You need to configure prefix or namespace to use hashmap mode')
-  await t.throwsAsync(() => layer.set('test', undefined), 'Invalid set command, ttl and value are required')
 })
 
 test.serial('layer should set the correct namespace + prefix with hashmap mode', async t => {
@@ -317,12 +316,12 @@ test.serial('layer should set the correct namespace + prefix with hashmap mode',
   await layer.set('test', 'toto')
   await layer.set('test2', 'toto')
   const value = await redisClient.hget('mynamespace:myprefix', 'test')
-  t.assert(value === 'toto')
+  t.assert(value === '"toto"')
   const value2 = await redisClient.hget('mynamespace:myprefix', 'test2')
-  t.assert(value2 === 'toto')
+  t.assert(value2 === '"toto"')
   await layer.clear('test')
   const clearedValue = await redisClient.hget('mynamespace:myprefix', 'test')
   t.assert(clearedValue === null)
   const clearedValue2 = await redisClient.hget('mynamespace:myprefix', 'test2')
-  t.assert(clearedValue2 === 'toto')
+  t.assert(clearedValue2 === '"toto"')
 })
