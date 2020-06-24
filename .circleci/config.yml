@@ -1,4 +1,4 @@
-version: 2
+version: 2.1
 
 redis_service: &redis_service
   image: redis:4
@@ -17,8 +17,11 @@ jobs:
           command: yarn lint
 
   test:
+    parameters:
+      node-version:
+        type: string
     docker:
-      - image: circleci/node:12
+      - image: circleci/node:<< parameters.node-version >>
       - *redis_service
     steps:
       - checkout
@@ -72,6 +75,9 @@ workflows:
           filters: *filter-tags
       - test:
           filters: *filter-tags
+          matrix:
+            parameters:
+              node-version: ["10", "12", "14"]
       - publish:
           filters:
             <<: *filter-tags
