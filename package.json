@@ -22,7 +22,7 @@
     "build"
   ],
   "publishConfig": {
-    "access": true
+    "access": "public"
   },
   "devDependencies": {
     "@types/ioredis": "^4.0.19",
