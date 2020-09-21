@@ -1,6 +1,6 @@
 {
   "name": "@rlvt/cache-cache",
-  "version": "0.9.2",
+  "version": "0.10.0",
   "description": "cache all the things",
   "main": "build/index.js",
   "license": "Apache-2.0",
