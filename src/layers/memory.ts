@@ -38,12 +38,24 @@ export class MemoryCacheLayer implements CacheLayer {
     return this.lru.get(key) as T | undefined
   }
 
+  async getWithNamespace<T extends object | string | null | undefined> (namespace: string, key: string) {
+    return this.get<T>(`${namespace}-${key}`)
+  }
+
   async set<T extends object | string | null | undefined> (key: string, object: T, ttl?: number): Promise<void> {
     const customTTL = ttl !== undefined ? ttl * (this.getConfig<number>('ttlMultiplier') ?? 1) : undefined
     this.lru.set(key, object, customTTL ?? this.getConfig<number>('ttl'))
   }
 
+  async setWithNamespace<T extends object | string | null | undefined> (namespace: string, key: string, object: T, ttl?: number) {
+    return this.set<T>(`${namespace}-${key}`, object, ttl)
+  }
+
   async clear (key: string): Promise<void> {
     this.lru.del(key)
+  }
+
+  async clearWithNamespace (namespace: string, key: string): Promise<void> {
+    return this.clear(`${namespace}-${key}`)
   }
 }

@@ -325,3 +325,24 @@ test.serial('layer should set the correct namespace + prefix with hashmap mode',
   const clearedValue2 = await redisClient.hget('mynamespace:myprefix', 'test2')
   t.assert(clearedValue2 === '"toto"')
 })
+
+test.serial('layer should set the correct custom namespace + prefix with hashmap mode', async t => {
+  const layer = new RedisCacheLayer({
+    redisClient,
+    ttl: 5000,
+    hashmap: true,
+    prefix: 'myprefix'
+  })
+  await layer.setWithNamespace('mynamespace', 'test', 'toto')
+  await layer.setWithNamespace('mynamespace', 'test2', 'toto')
+  const value = await redisClient.hget('mynamespace:myprefix', 'test')
+  t.assert(value === '"toto"')
+  const value2 = await redisClient.hget('mynamespace:myprefix', 'test2')
+  t.assert(value2 === '"toto"')
+  await layer.clearWithNamespace('mynamespace', 'test')
+  const clearedValue = await redisClient.hget('mynamespace:myprefix', 'test')
+  t.assert(clearedValue === null)
+  const clearedValue2 = await redisClient.hget('mynamespace:myprefix', 'test2')
+  t.assert(clearedValue2 === '"toto"')
+  t.is(await layer.getWithNamespace('mynamespace', 'test2'), 'toto')
+})

@@ -42,3 +42,13 @@ test.serial('layer should implement TTL multiplier correctly', async t => {
   // overriden ttl should have invalided the key
   t.assert(value === undefined)
 })
+
+test.serial('layer should works with namespace', async t => {
+  const layer = new MemoryCacheLayer({
+    ttl: 1000
+  })
+  await layer.setWithNamespace('foo', 'bar', '12')
+  t.is(await layer.getWithNamespace('foo', 'bar'), '12')
+  await layer.clearWithNamespace('foo', 'bar')
+  t.is(await layer.getWithNamespace('foo', 'bar'), undefined)
+})
