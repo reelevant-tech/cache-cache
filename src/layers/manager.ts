@@ -47,15 +47,35 @@ export class CacheLayerManager {
     return undefined
   }
 
+  async getWithNamespace<T extends object | string> (namespace: string, key: string): Promise<T | undefined> {
+    for (let layer of this.layers) {
+      const result = await layer.getWithNamespace<T>(namespace, key)
+      if (result !== undefined) return result
+    }
+    return undefined
+  }
+
   async set<T extends object | string> (key: string, object: T, ttl?: number): Promise<void> {
     for (let layer of this.layers) {
       await layer.set<T>(key, object, ttl)
     }
   }
 
+  async setWithNamespace<T extends object | string> (namespace: string, key: string, object: T, ttl?: number): Promise<void> {
+    for (let layer of this.layers) {
+      await layer.setWithNamespace<T>(namespace, key, object, ttl)
+    }
+  }
+
   async clear (key: string) {
     for (let layer of this.layers) {
       await layer.clear(key)
+    }
+  }
+
+  async clearWithNamespace (namespace: string, key: string) {
+    for (let layer of this.layers) {
+      await layer.clearWithNamespace(namespace, key)
     }
   }
 }

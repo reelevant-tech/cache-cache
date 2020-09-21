@@ -36,16 +36,29 @@ export class RedisCacheLayer implements CacheLayer {
 
   constructor (private options: RedisCacheLayerOptions) {}
 
-  private getCacheKey (key: string) {
-    return `${this.namespace}${this.prefix}${key}`
+  private getCacheKey (namespace: string, key: string) {
+    return `${namespace}${this.prefix}${key}`
   }
 
-  private getCommandAndParams (action: CommandAction, key: string, value?: unknown, ttl?: number): () => Promise<any> {
+  private getCommandAndParams ({
+    action, key, value, ttl, namespace: rawNamespace
+  }: {
+    action: CommandAction,
+    key: string,
+    namespace: string,
+    value?: unknown,
+    ttl?: number
+  }): () => Promise<any> {
     if (action === CommandAction.SET && (ttl === undefined || value === undefined)) {
       throw new Error('Invalid set command, ttl and value are required')
     }
-    if (this.hashmap === true) {
-      let hashmapKey = `${this.namespace}${this.prefix}`
+    const namespace = rawNamespace ? `${rawNamespace}:` : ''
+    const hashmap = this.getConfig<boolean>('hashmap')
+    if (hashmap === true) {
+      if (this.prefix === '' && namespace === '') {
+        throw new Error('You need to configure prefix or namespace to use hashmap mode')
+      }
+      let hashmapKey = `${namespace}${this.prefix}`
       hashmapKey = hashmapKey.substr(0, hashmapKey.length - 1)
       switch (action) {
         case CommandAction.DEL:
@@ -61,11 +74,11 @@ export class RedisCacheLayer implements CacheLayer {
     }
     switch (action) {
       case CommandAction.DEL:
-        return () => this.client.del(this.getCacheKey(key))
+        return () => this.client.del(this.getCacheKey(namespace, key))
       case CommandAction.GET:
-        return () => this.client.get(this.getCacheKey(key))
+        return () => this.client.get(this.getCacheKey(namespace, key))
       case CommandAction.SET:
-        return () => this.client.set(this.getCacheKey(key), value, 'PX', ttl)
+        return () => this.client.set(this.getCacheKey(namespace, key), value, 'PX', ttl)
     }
   }
 
@@ -73,9 +86,13 @@ export class RedisCacheLayer implements CacheLayer {
     return getConfig<RedisCacheLayerOptions, T>(key, this.options, this.type)
   }
 
-  async get<T extends string | object | null | undefined> (key: string): Promise<T | undefined> {
+  async get<T extends string | object | null | undefined> (key: string) {
+    return this.getWithNamespace<T>(this.namespace, key)
+  }
+
+  async getWithNamespace<T extends string | object | null | undefined> (namespace: string, key: string): Promise<T | undefined> {
     const promises: Array<Promise<string | undefined | null>> = [
-      this.getCommandAndParams(CommandAction.GET, key)()
+      this.getCommandAndParams({ action: CommandAction.GET, key, namespace })()
     ]
     const timeout = this.getConfig<number>('timeout')
     if (timeout !== undefined) {
@@ -96,17 +113,30 @@ export class RedisCacheLayer implements CacheLayer {
     }
   }
 
-  async set<T extends object | string | null | undefined> (key: string, object: T, ttl?: number): Promise<void> {
+  async set (key: string, object: unknown, ttl?: number) {
+    return this.setWithNamespace(this.namespace, key, object, ttl)
+  }
+
+  async setWithNamespace (namespace: string, key: string, object: unknown, ttl?: number): Promise<void> {
     const customTTL = ttl !== undefined ? ttl * (this.getConfig<number>('ttlMultiplier') ?? 1) : undefined
     const value = typeof object === 'undefined' ? 'undefined' : JSON.stringify(object)
-    const res = await of(this.getCommandAndParams(CommandAction.SET, key, value, customTTL ?? this.getConfig<number>('ttl'))())
+    const res = await of(this.getCommandAndParams({
+      action: CommandAction.SET,
+      key, value,
+      ttl: customTTL ?? this.getConfig<number>('ttl'),
+      namespace
+    })())
     if (res[1] !== undefined && this.getConfig('shallowErrors') !== true) {
       throw res[1]
     }
   }
 
-  async clear (key: string): Promise<void> {
-    let res = await of(this.getCommandAndParams(CommandAction.DEL, key)())
+  async clear (key: string) {
+    return this.clearWithNamespace(this.namespace, key)
+  }
+
+  async clearWithNamespace (namespace: string, key: string): Promise<void> {
+    let res = await of(this.getCommandAndParams({ action: CommandAction.DEL, key, namespace })())
     if (res[1] !== undefined && this.getConfig('shallowErrors') !== true) {
       throw res[1]
     }
@@ -125,15 +155,7 @@ export class RedisCacheLayer implements CacheLayer {
 
   get namespace () {
     const namespace = this.getConfig<string>('namespace')
-    return namespace ? `${namespace}:` : ''
-  }
-
-  get hashmap () {
-    const hashmap = this.getConfig<boolean>('hashmap')
-    if (hashmap === true && this.namespace === '' && this.prefix === '') {
-      throw new Error('You need to configure prefix or namespace to use hashmap mode')
-    }
-    return hashmap
+    return namespace ?? ''
   }
 
   get client (): IORedis.Redis {
