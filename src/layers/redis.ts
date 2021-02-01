@@ -104,13 +104,44 @@ export class RedisCacheLayer implements CacheLayer {
     }
 
     if (result === null || result === undefined) return undefined
-    if (result === 'undefined') return undefined as T
     try {
-      const parsedResult = JSON.parse(result)
-      return (parsedResult?.type === 'Buffer' ? Buffer.from(parsedResult) : parsedResult) as T
+      return this.parse(result) as T
     } catch (err) {
       return result as T
     }
+  }
+
+  private stringify (data: unknown): string {
+    if (typeof data === 'undefined') {
+      return 'undefined'
+    }
+    return JSON.stringify(data, function replacer (key, value) {
+      if (value instanceof Map) {
+        return {
+          type: 'Map',
+          value: Array.from(value.entries())
+        }
+      } else {
+        return value
+      }
+    })
+  }
+
+  private parse (data: string): any {
+    if (data === 'undefined') {
+      return undefined
+    }
+    return JSON.parse(data, function reviver (key, value) {
+      if (typeof value === 'object' && value !== null) {
+        if (value.type === 'Map') {
+          return new Map(value.value)
+        }
+        if (value.type === 'Buffer') {
+          return Buffer.from(value)
+        }
+      }
+      return value
+    })
   }
 
   async set (key: string, object: unknown, ttl?: number) {
@@ -119,7 +150,7 @@ export class RedisCacheLayer implements CacheLayer {
 
   async setWithNamespace (namespace: string, key: string, object: unknown, ttl?: number): Promise<void> {
     const customTTL = ttl !== undefined ? ttl * (this.getConfig<number>('ttlMultiplier') ?? 1) : undefined
-    const value = typeof object === 'undefined' ? 'undefined' : JSON.stringify(object)
+    const value = this.stringify(object)
     const res = await of(this.getCommandAndParams({
       action: CommandAction.SET,
       key, value,

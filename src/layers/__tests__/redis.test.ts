@@ -276,6 +276,17 @@ test.serial('should be able to use redis layer with buffer', async t => {
   t.assert(Buffer.compare(buf, value) === 0)
 })
 
+test.serial('should be able to use redis layer with Map', async t => {
+  const layer = new RedisCacheLayer({
+    redisClient,
+    ttl: 5000
+  })
+  await layer.set('test', new Map().set('foo', 'bar'))
+  const value = await layer.get<Map<string, string>>('test')
+  t.assert(value instanceof Map)
+  t.assert(value.get('foo'), 'bar')
+})
+
 test.serial('layer should not throw error on hashmap mode without prefix', async t => {
   const layer = new RedisCacheLayer({
     redisClient,
