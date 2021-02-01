@@ -2,7 +2,7 @@ import { CacheLayerManagerOptions } from './layers/manager'
 import { currentConfig } from './utils/config'
 import { memoizeFunction, MemoizeFunctionOptions } from './strategies/memoize'
 import { Cache } from './strategies/store'
-import { AsyncFunc, Func } from './types/common'
+import { Func } from './types/common'
 
 type NestedPartial<T> = {
   [K in keyof T]?: T[K] extends Array<infer R> ? Array<NestedPartial<R>> : T[K] extends Function ? T[K] : NestedPartial<T[K]>
@@ -49,12 +49,12 @@ export const getMemoize = <T extends object | string>(
  * @param [options] {Types.CacheManagerOptions} default to memory-only cache or
  *  config given to `useAsDefault`
  */
-export const Memoize = <T extends object | string>(
+export const Memoize = <T extends (...args: any[]) => Promise<any>>(
   options?: NestedPartial<MemoizeFunctionOptions<T>>
 ) => {
-  return (target: Object, propertyKey: string, descriptor: TypedPropertyDescriptor<AsyncFunc<T>>) => {
+  return (target: Object, propertyKey: string, descriptor: TypedPropertyDescriptor<T>) => {
     if (descriptor.value !== undefined) {
-      descriptor.value = getMemoize<T>(descriptor.value as Func<T>, options)
+      descriptor.value = getMemoize<T>(descriptor.value, options) as any
     } else {
       throw new Error('Memoize decorator only available for async function.')
     }
