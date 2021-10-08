@@ -14,6 +14,7 @@ const sleep = (timeout: number): Promise<undefined> => {
 }
 
 test.afterEach(async t => {
+  redisClient.options.commandTimeout = undefined
   await redisClient.flushall()
 })
 
@@ -182,6 +183,23 @@ test.serial('should not throw if shallowErrors is set to true on get', async t =
   const noValue = await layer.get('test')
   t.assert(noValue === undefined)
   redisClient.get = originalGet
+})
+
+test.serial('should not wait to connect to Redis if shallowErrors is set to true on get', async t => {
+  const redisClient = new IORedis({
+    host: 'redis:6380', // will be unable to connect
+    maxRetriesPerRequest: null // wait forever to connect
+  })
+  const layer = new RedisCacheLayer({
+    redisClient,
+    ttl: 5000,
+    timeout: undefined, // disable timeout for this test
+    prefix: 'myprefix',
+    shallowErrors: true
+  })
+  const noValue = await layer.get('test')
+  t.is(noValue, undefined)
+  redisClient.disconnect()
 })
 
 test.serial('should throw if shallowErrors is set to false on get', async t => {

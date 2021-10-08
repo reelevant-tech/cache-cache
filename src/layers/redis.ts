@@ -67,7 +67,7 @@ export class RedisCacheLayer implements CacheLayer {
           return () => this.client.hget(hashmapKey, key)
         case CommandAction.SET:
           return async () => {
-            await this.client.hset(hashmapKey, key, value)
+            await this.client.hset(hashmapKey, key, value as any)
             return this.client.pexpire(hashmapKey, ttl!)
           }
       }
@@ -78,7 +78,7 @@ export class RedisCacheLayer implements CacheLayer {
       case CommandAction.GET:
         return () => this.client.get(this.getCacheKey(namespace, key))
       case CommandAction.SET:
-        return () => this.client.set(this.getCacheKey(namespace, key), value, 'PX', ttl)
+        return () => this.client.set(this.getCacheKey(namespace, key), value as any, 'PX', ttl)
     }
   }
 
@@ -91,15 +91,8 @@ export class RedisCacheLayer implements CacheLayer {
   }
 
   async getWithNamespace<T extends string | object | null | undefined> (namespace: string, key: string): Promise<T | undefined> {
-    const promises: Array<Promise<string | undefined | null>> = [
-      this.getCommandAndParams({ action: CommandAction.GET, key, namespace })()
-    ]
-    const timeout = this.getConfig<number>('timeout')
-    if (timeout !== undefined) {
-      promises.push(this.sleep(timeout))
-    }
-    const [ result, err ] = await of(Promise.race(promises))
-    if (err !== undefined && this.getConfig('shallowErrors') !== true) {
+    const [ result, err ] = await of<string | undefined | null>(this.getCommandAndParams({ action: CommandAction.GET, key, namespace })())
+    if (err !== undefined && this.getConfig('shallowErrors') !== true && err.message !== 'Command timed out') {
       throw err
     }
 
@@ -173,12 +166,6 @@ export class RedisCacheLayer implements CacheLayer {
     }
   }
 
-  private sleep (timeout: number): Promise<undefined> {
-    return new Promise((resolve) => {
-      return setTimeout(resolve, timeout)
-    })
-  }
-
   get prefix () {
     const prefix = this.getConfig<string>('prefix')
     return prefix ? `${prefix}:` : ''
@@ -194,6 +181,10 @@ export class RedisCacheLayer implements CacheLayer {
     if (redis === undefined) {
       throw new Error(`RedisCacheLayer cannot be instanciated without a redisClient`)
     } else {
+      redis.options.commandTimeout = this.getConfig('timeout')
+      if (this.getConfig('shallowErrors') === true) {
+        redis.options.enableOfflineQueue = false
+      }
       return redis
     }
   }
